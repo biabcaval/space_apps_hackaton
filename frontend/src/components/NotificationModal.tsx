@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Bell, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import UserLocationMap from "./UserLocationMap";
 import heroBg from "../assets/hero-bg.jpg";
 
 interface NotificationModalProps {
@@ -187,9 +188,16 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
                     )}
                   </Button>
                   {latitude && longitude && (
-                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded border">
-                      <div className="font-medium text-foreground mb-1">Location Detected:</div>
-                      <div>Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground bg-muted p-3 rounded border">
+                        <div className="font-medium text-foreground mb-1">Location Detected:</div>
+                        <div>Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
+                      </div>
+                      <UserLocationMap 
+                        latitude={latitude} 
+                        longitude={longitude}
+                        className="border-2 border-primary/20"
+                      />
                     </div>
                   )}
                 </div>

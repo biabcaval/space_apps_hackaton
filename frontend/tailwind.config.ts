@@ -57,6 +57,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Brand Color Palette
+        "blue-yonder": "#2E96F5",
+        "electric-blue": "#0042A6", 
+        "neon-blue": "#0960E1",
+        "deep-blue": "#07173F",
+        "rocket-red": "#E43700",
+        "martian-red": "#8E1100",
+        "neon-yellow": "#EAFE07",
+        // Air Quality Colors
         "air-good": "hsl(var(--air-good))",
         "air-moderate": "hsl(var(--air-moderate))",
         "air-unhealthy": "hsl(var(--air-unhealthy))",

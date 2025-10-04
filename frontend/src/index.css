@@ -17,24 +17,24 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    --primary: 195 85% 45%;
+    --primary: 209 92% 57%; /* Blue Yonder #2E96F5 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 195 25% 92%;
-    --secondary-foreground: 215 25% 15%;
+    --secondary: 209 100% 33%; /* Electric Blue #0042A6 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 195 25% 92%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 15% 45%;
 
-    --accent: 145 65% 50%;
+    --accent: 225 92% 46%; /* Neon Blue #0960E1 */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 85% 55%;
+    --destructive: 15 100% 45%; /* Rocket Red #E43700 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 195 20% 88%;
-    --input: 195 20% 88%;
-    --ring: 195 85% 45%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 209 92% 57%; /* Blue Yonder */
 
     --radius: 0.75rem;
     
@@ -46,12 +46,12 @@ All colors MUST be HSL.
     --air-hazardous: 0 85% 45%;
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(195 85% 45%) 0%, hsl(195 75% 55%) 50%, hsl(180 70% 60%) 100%);
-    --gradient-atmospheric: linear-gradient(180deg, hsl(195 100% 97%) 0%, hsl(195 85% 95%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(209 92% 57%) 0%, hsl(225 92% 46%) 50%, hsl(209 100% 33%) 100%);
+    --gradient-atmospheric: linear-gradient(180deg, hsl(220 50% 97%) 0%, hsl(220 30% 95%) 100%);
     
     /* Shadows */
-    --shadow-smooth: 0 4px 16px -2px hsl(195 85% 45% / 0.1);
-    --shadow-elevated: 0 8px 24px -4px hsl(195 85% 45% / 0.15);
+    --shadow-smooth: 0 4px 16px -2px hsl(209 92% 57% / 0.1);
+    --shadow-elevated: 0 8px 24px -4px hsl(209 92% 57% / 0.15);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -83,27 +83,27 @@ All colors MUST be HSL.
     --popover: 215 25% 12%;
     --popover-foreground: 195 20% 95%;
 
-    --primary: 195 85% 55%;
-    --primary-foreground: 215 30% 8%;
+    --primary: 209 92% 57%; /* Blue Yonder */
+    --primary-foreground: 220 80% 8%; /* Deep Blue */
 
-    --secondary: 215 20% 18%;
-    --secondary-foreground: 195 20% 95%;
+    --secondary: 209 100% 33%; /* Electric Blue */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 20% 18%;
-    --muted-foreground: 195 15% 65%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 65%;
 
-    --accent: 145 65% 50%;
+    --accent: 225 92% 46%; /* Neon Blue */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 85% 55%;
+    --destructive: 15 100% 45%; /* Rocket Red */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 20%;
-    --input: 215 20% 20%;
-    --ring: 195 85% 55%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 209 92% 57%; /* Blue Yonder */
     
-    --gradient-hero: linear-gradient(135deg, hsl(195 85% 35%) 0%, hsl(195 75% 45%) 50%, hsl(180 70% 50%) 100%);
-    --gradient-atmospheric: linear-gradient(180deg, hsl(215 30% 8%) 0%, hsl(215 25% 12%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(209 92% 35%) 0%, hsl(225 92% 35%) 50%, hsl(209 100% 25%) 100%);
+    --gradient-atmospheric: linear-gradient(180deg, hsl(220 80% 8%) 0%, hsl(220 60% 12%) 100%);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

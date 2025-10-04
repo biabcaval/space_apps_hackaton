@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
-import { Bell } from "lucide-react";
+import { Bell, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import heroBg from "../assets/hero-bg.jpg";
 
@@ -12,31 +12,102 @@ interface NotificationModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+
 const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { toast } = useToast();
+
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation not supported",
+        description: "Your browser doesn't support geolocation. Please try using a different browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLatitude(latitude);
+        setLongitude(longitude);
+        setIsGettingLocation(false);
+        
+        toast({
+          title: "Location detected!",
+          description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        });
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        let errorMessage = "Unable to get your location. Please try again.";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable. Please check your device's location settings.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+        }
+        
+        toast({
+          title: "Location Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
-    if (!email || !phone || !location) {
+    if (!email || !phone) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all fields to receive notifications.",
+        description: "Please provide your email and phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Location validation
+    if (!latitude || !longitude) {
+      toast({
+        title: "Location Required",
+        description: "Please get your current location to receive notifications.",
         variant: "destructive",
       });
       return;
     }
 
     // Store preferences (in a real app, this would be sent to your API)
-    console.log("Notification preferences:", { email, phone, location });
+    const locationData = { latitude, longitude, method: 'geolocation' };
+    const location = `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    
+    console.log("Notification preferences:", { email, phone, ...locationData });
     
     toast({
       title: "Preferences Saved!",
-      description: "You'll receive air quality notifications for your location.",
+      description: `You'll receive air quality notifications for ${location}.`,
     });
     
     onOpenChange(false);
@@ -53,7 +124,7 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
           className="relative h-32 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBg})` }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/80 to-primary/60" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-yonder/90 via-neon-blue/80 to-electric-blue/90" />
           <div className="relative h-full flex items-center justify-center">
             <Bell className="h-12 w-12 text-primary-foreground" />
           </div>
@@ -92,16 +163,37 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                type="text"
-                placeholder="City, State or ZIP Code"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="transition-all"
-              />
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label>Location</Label>
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    className="w-full"
+                  >
+                    {isGettingLocation ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Getting Location...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Get My Current Location
+                      </>
+                    )}
+                  </Button>
+                  {latitude && longitude && (
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded border">
+                      <div className="font-medium text-foreground mb-1">Location Detected:</div>
+                      <div>Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-4">

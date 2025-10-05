@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import NotificationModal from "../components/NotificationModal";
+import LocationSearchModal from "../components/LocationSearchModal";
 import UserLocationMap from "../components/UserLocationMap";
+import WeatherForecast from "../components/WeatherForecast";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { Button } from "../components/ui/button";
-import { MapPin, Loader2, Bell } from "lucide-react";
+import { MapPin, Loader2, Bell, Search } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
-import { api } from '../api';
+import { api } from "../api";
 
 // Helper function to get AQI description
 const getAQIDescription = (aqi: number): string => {
@@ -24,23 +27,45 @@ const getAQIDescription = (aqi: number): string => {
   }
 };
 
+// Helper function to get AQI image
+const getAQIImage = (aqi: number): string => {
+  switch (aqi) {
+    case 1:
+      return "public/good.png";
+    case 2:
+      return "public/fair.png";
+    case 3:
+      return "public/moderate.png";
+    case 4:
+      return "public/poor.png";
+    case 5:
+      return "public/very-poor.png";
+    default:
+      return "public/moderate.png"; // fallback to moderate
+  }
+};
+
 const Index = () => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showLocationSearchModal, setShowLocationSearchModal] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationAddress, setLocationAddress] = useState<string>("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [airPollutionData, setAirPollutionData] = useState<any>(null);
   const [isLoadingAirData, setIsLoadingAirData] = useState(false);
   const [forecastData, setForecastData] = useState<any>(null);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [showForecast, setShowForecast] = useState(false);
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
   const { toast } = useToast();
 
   // Function to fetch air pollution data
   const fetchAirPollutionData = async (lat: number, lon: number) => {
     setIsLoadingAirData(true);
     try {
-      const data = await api.get('/air-pollution/current', { lat, lon });
+      const data = await api.get("/air-pollution/current", { lat, lon });
       setAirPollutionData(data);
     } catch (error) {
       console.error('Error fetching air pollution data:', error);
@@ -54,27 +79,65 @@ const Index = () => {
     }
   };
 
-  // Refatore a função fetchAirPollutionForecast
-  const fetchAirPollutionForecast = async (lat: number, lon: number) => {
-    setIsLoadingForecast(true);
+// Function to fetch air pollution forecast (daily averages)
+const fetchAirPollutionForecast = async (lat: number, lon: number) => {
+  setIsLoadingForecast(true);
+  try {
+    const data = await api.get("/air-pollution/forecast-daily", { lat, lon });
+    setForecastData(data);
+    setShowForecast(true);
+    
+    toast({
+      title: "Daily Forecast Loaded!",
+      description: `${data.daily_forecast.length} days of air quality forecast available.`,
+    });
+  } catch (error) {
+    console.error('Error fetching air pollution forecast:', error);
+    toast({
+      title: "Forecast Error",
+      description: "Unable to fetch air quality forecast. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoadingForecast(false);
+  }
+};
+
+  // Function to fetch weather forecast data
+  const fetchWeatherForecast = async (lat: number, lon: number) => {
+    setIsLoadingWeather(true);
     try {
-      const data = await api.get('/air-pollution/forecast-daily', { lat, lon });
-      setForecastData(data);
-      setShowForecast(true);
+      const response = await fetch(`http://localhost:8000/weather/forecast?lat=${lat}&lon=${lon}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Weather API response:', data);
+      
+      // Validate the data structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format from weather API');
+      }
+      
+      setWeatherData(data);
       
       toast({
-        title: "Daily Forecast Loaded!",
-        description: `${data.daily_forecast.length} days of air quality forecast available.`,
+        title: "Weather forecast loaded!",
+        description: `Weather forecast for the next 7 days has been loaded.`,
       });
+      
     } catch (error) {
-      console.error('Error fetching air pollution forecast:', error);
+      console.error('Error fetching weather forecast:', error);
+      setWeatherData(null); // Clear any previous data
       toast({
-        title: "Forecast Error",
-        description: "Unable to fetch air quality forecast. Please try again.",
+        title: "Error loading weather forecast",
+        description: "Failed to load weather forecast data. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoadingForecast(false);
+      setIsLoadingWeather(false);
     }
   };
 
@@ -95,6 +158,7 @@ const Index = () => {
         const { latitude, longitude } = position.coords;
         setLatitude(latitude);
         setLongitude(longitude);
+        setLocationAddress("Your current location");
         setIsGettingLocation(false);
         
         toast({
@@ -104,6 +168,9 @@ const Index = () => {
 
         // Fetch air pollution data for the detected location
         await fetchAirPollutionData(latitude, longitude);
+        
+        // Fetch weather forecast data for the detected location
+        await fetchWeatherForecast(latitude, longitude);
       },
       (error) => {
         setIsGettingLocation(false);
@@ -135,6 +202,22 @@ const Index = () => {
     );
   };
 
+  const handleLocationSelect = async (lat: number, lng: number, address: string) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    setLocationAddress(address);
+    
+    // Reset forecast view to current when location changes
+    setShowForecast(false);
+    setForecastData(null);
+    
+    // Fetch air pollution data for the selected location
+    await fetchAirPollutionData(lat, lng);
+    
+    // Fetch weather forecast data for the selected location
+    await fetchWeatherForecast(lat, lng);
+  };
+
   useEffect(() => {
     // Show notification modal on first visit
     setShowNotificationModal(true);
@@ -145,6 +228,12 @@ const Index = () => {
       <NotificationModal 
         open={showNotificationModal} 
         onOpenChange={setShowNotificationModal}
+      />
+      
+      <LocationSearchModal
+        open={showLocationSearchModal}
+        onOpenChange={setShowLocationSearchModal}
+        onLocationSelect={handleLocationSelect}
       />
       
       <div className="min-h-screen flex flex-col">
@@ -176,32 +265,46 @@ const Index = () => {
             <div className="bg-card rounded-lg shadow-lg p-6 border">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Your Location</h2>
-                  <p className="text-muted-foreground">Find your current location to get personalized air quality data</p>
+                  <h2 className="text-2xl font-bold">Location</h2>
+                  <p className="text-muted-foreground">Get your current location or search for any location worldwide</p>
                 </div>
-                <Button
-                  onClick={getCurrentLocation}
-                  disabled={isGettingLocation}
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  {isGettingLocation ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Getting Location...
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="h-5 w-5" />
-                      Get My Location
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowLocationSearchModal(true)}
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center gap-2"
+                  >
+                    <Search className="h-5 w-5" />
+                    Search Location
+                  </Button>
+                  <Button
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    size="lg"
+                    className="flex items-center gap-2"
+                  >
+                    {isGettingLocation ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Getting Location...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-5 w-5" />
+                        Get My Location
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               
               {latitude && longitude && (
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded border">
-                  <div className="font-medium text-foreground mb-1">Location Detected:</div>
+                  <div className="font-medium text-foreground mb-1">Current Location:</div>
+                  {locationAddress && (
+                    <div className="mb-1">{locationAddress}</div>
+                  )}
                   <div>Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
                 </div>
               )}
@@ -271,24 +374,36 @@ const Index = () => {
                           {forecastData.daily_forecast.map((day: any, index: number) => {
                             const date = new Date(day.date);
                             return (
-                              <div key={index} className="flex items-center justify-between bg-background p-4 rounded border">
-                                <div className="flex-1">
-                                  <div className="font-medium">
-                                    {date.toLocaleDateString('en-US', { 
-                                      weekday: 'long', 
-                                      month: 'short', 
-                                      day: 'numeric' 
-                                    })}
+                              <div key={index} className="flex items-center justify-between bg-background p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-4 flex-1">
+                                  <div className="flex-shrink-0">
+                                    <img 
+                                      src={getAQIImage(day.aqi)}
+                                      alt={`AQI ${day.aqi} - ${getAQIDescription(day.aqi).split(' - ')[0]}`}
+                                      className="w-12 h-12 object-contain"
+                                    />
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {getAQIDescription(day.aqi)} • {day.data_points} data points
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Range: AQI {day.min_aqi}-{day.max_aqi}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-foreground mb-1">
+                                      {date.toLocaleDateString('en-US', { 
+                                        weekday: 'long', 
+                                        month: 'short', 
+                                        day: 'numeric' 
+                                      })}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground mb-1">
+                                      {getAQIDescription(day.aqi).split(' - ')[0]} • {day.data_points} data points
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Range: AQI {day.min_aqi}-{day.max_aqi}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-primary">AQI {day.aqi}</div>
+                                <div className="text-right flex-shrink-0">
+                                  <div className="flex items-baseline gap-1 mb-1">
+                                    <span className="text-xl font-bold text-primary">{day.aqi}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">AQI</span>
+                                  </div>
                                   <div className="text-xs text-muted-foreground">
                                     PM2.5: {day.components.pm2_5} μg/m³
                                   </div>
@@ -343,13 +458,30 @@ const Index = () => {
                   ) : !showForecast && airPollutionData ? (
                     <div className="space-y-4">
                       {/* Air Quality Index */}
-                      <div className="bg-muted p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">Air Quality Index (AQI)</h4>
-                        <div className="text-2xl font-bold text-primary">
-                          {airPollutionData.data.list[0].main.aqi}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
+                      <div className="bg-muted p-8 rounded-lg border">
+                        <h4 className="font-semibold mb-6 text-xl text-center">Air Quality Index (AQI)</h4>
+                        <div className="flex flex-col items-center text-center space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex items-baseline justify-center gap-2">
+                              <span className="text-5xl font-bold text-primary">
+                                {airPollutionData.data.list[0].main.aqi}
+                              </span>
+                              <span className="text-lg font-medium text-muted-foreground">
+                                AQI
+                              </span>
+                            </div>
+                            <div className="text-base text-muted-foreground leading-relaxed max-w-md">
+                              {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
+                            </div>
+
+                            <div className="flex-shrink-0 pl-60">
+                            <img 
+                              src={getAQIImage(airPollutionData.data.list[0].main.aqi)}
+                              alt={`AQI ${airPollutionData.data.list[0].main.aqi} - ${getAQIDescription(airPollutionData.data.list[0].main.aqi).split(' - ')[0]}`}
+                              className="w-16 h-16 object-contain"
+                            />
+                          </div>
+                          </div>
                         </div>
                       </div>
 
@@ -419,6 +551,14 @@ const Index = () => {
                 </div>
               </div>
             )}
+
+            {/* Weather Forecast Section */}
+            <ErrorBoundary>
+              <WeatherForecast 
+                weatherData={weatherData} 
+                isLoading={isLoadingWeather} 
+              />
+            </ErrorBoundary>
           </div>
         </main>
       </div>

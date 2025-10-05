@@ -4,6 +4,7 @@ import UserLocationMap from "../components/UserLocationMap";
 import { Button } from "../components/ui/button";
 import { MapPin, Loader2, Bell } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { api } from '../api';
 
 // Helper function to get AQI description
 const getAQIDescription = (aqi: number): string => {
@@ -39,11 +40,7 @@ const Index = () => {
   const fetchAirPollutionData = async (lat: number, lon: number) => {
     setIsLoadingAirData(true);
     try {
-      const response = await fetch(`http://localhost:8000/air-pollution/current?lat=${lat}&lon=${lon}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch air pollution data');
-      }
-      const data = await response.json();
+      const data = await api.get('/air-pollution/current', { lat, lon });
       setAirPollutionData(data);
     } catch (error) {
       console.error('Error fetching air pollution data:', error);
@@ -57,33 +54,29 @@ const Index = () => {
     }
   };
 
-// Function to fetch air pollution forecast (daily averages)
-const fetchAirPollutionForecast = async (lat: number, lon: number) => {
-  setIsLoadingForecast(true);
-  try {
-    const response = await fetch(`http://localhost:8000/air-pollution/forecast-daily?lat=${lat}&lon=${lon}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch air pollution forecast');
+  // Refatore a função fetchAirPollutionForecast
+  const fetchAirPollutionForecast = async (lat: number, lon: number) => {
+    setIsLoadingForecast(true);
+    try {
+      const data = await api.get('/air-pollution/forecast-daily', { lat, lon });
+      setForecastData(data);
+      setShowForecast(true);
+      
+      toast({
+        title: "Daily Forecast Loaded!",
+        description: `${data.daily_forecast.length} days of air quality forecast available.`,
+      });
+    } catch (error) {
+      console.error('Error fetching air pollution forecast:', error);
+      toast({
+        title: "Forecast Error",
+        description: "Unable to fetch air quality forecast. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingForecast(false);
     }
-    const data = await response.json();
-    setForecastData(data);
-    setShowForecast(true);
-    
-    toast({
-      title: "Daily Forecast Loaded!",
-      description: `${data.daily_forecast.length} days of air quality forecast available.`,
-    });
-  } catch (error) {
-    console.error('Error fetching air pollution forecast:', error);
-    toast({
-      title: "Forecast Error",
-      description: "Unable to fetch air quality forecast. Please try again.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoadingForecast(false);
-  }
-};
+  };
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {

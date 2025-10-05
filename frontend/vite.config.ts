@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-
+  
   return {
     plugins: [react()],
     base: '/space_apps_hackaton/',
@@ -16,6 +16,14 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '::',
       port: 8080,
+      proxy: {
+        '/api-health-check': {
+          target: env.VITE_API_URL_PRIMARY || 'https://7f36794fcfad.ngrok-free.app',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api-health-check/, ''),
+        }
+      }
     },
     define: {
       'process.env.VITE_API_URL_PRIMARY': JSON.stringify(env.VITE_API_URL_PRIMARY),

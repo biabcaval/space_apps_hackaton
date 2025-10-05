@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       proxy: {
         '/api-health-check': {
-          target: env.VITE_API_URL_PRIMARY || 'https://7f36794fcfad.ngrok-free.app',
+          target: env.VITE_API_URL_PRIMARY,
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/api-health-check/, ''),

@@ -60,11 +60,6 @@ class Api {
       const duration = Date.now() - startTime;
       console.log(`Request to ${api.defaults.baseURL}${fullUrl} succeeded in ${duration}ms`);
       
-      // Validação adicional para garantir que temos dados
-      if (!response.data || !response.data.data) {
-        throw new Error('Resposta da API não contém dados válidos');
-      }
-      
       return response.data;
     } catch (error) {
       if (this.isAxiosError(error)) {

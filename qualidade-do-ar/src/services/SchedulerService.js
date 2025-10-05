@@ -7,7 +7,7 @@ import WhatsappService from './WhatsappService.js';
 class SchedulerService {
   constructor() {
     this.activeJobs = new Map();
-    this.TIMEOUT_BETWEEN_USERS = 20000; // 20 segundos entre mensagens para diferentes usuários
+    this.TIMEOUT_BETWEEN_USERS = 60000; // 60 segundos entre mensagens para diferentes usuários
   }
 
   async initialize() {

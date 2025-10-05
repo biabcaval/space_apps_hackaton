@@ -2,3 +2,9 @@ fastapi
 uvicorn
 pydantic
 requests
+openmeteo-requests
+requests-cache 
+retry-requests 
+numpy 
+pandas
+python-dotenv

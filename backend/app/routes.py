@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from app.services import fetch_pollution_data, fetch_daily_forecast_data, search_location
+from app.services import fetch_pollution_data, fetch_daily_forecast_data, search_location, fetch_weather_forecast
 
 router = APIRouter()
 
@@ -14,6 +14,7 @@ async def read_root():
             "forecast_pollution": "/air-pollution/forecast?lat={lat}&lon={lon}",
             "daily_forecast": "/air-pollution/forecast-daily?lat={lat}&lon={lon}",
             "geocoding_search": "/geocoding/search?q={query}&limit={limit}",
+            "weather_forecast": "/weather/forecast?lat={lat}&lon={lon}",
             "docs": "/docs"
         }
     }
@@ -58,3 +59,14 @@ async def search_locations(
         "count": len(results),
         "results": results
     }
+
+@router.get("/weather/forecast")
+async def get_weather_forecast(
+    lat: float = Query(..., description="Latitude coordinate"),
+    lon: float = Query(..., description="Longitude coordinate")
+):
+    """
+    Get weather forecast data for given coordinates using Open-Meteo API
+    Returns hourly and daily weather forecasts including temperature, precipitation, wind, and humidity
+    """
+    return await fetch_weather_forecast(lat, lon)

@@ -4,6 +4,10 @@ from datetime import datetime, timezone
 from collections import defaultdict
 import statistics
 from typing import List, Dict, Any
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
+import pandas as pd
 from app.config import API_KEYS
 
 async def fetch_pollution_data(lat: float, lon: float, endpoint: str):
@@ -228,3 +232,108 @@ def format_location_name(location: Dict[str, Any]) -> str:
         parts.append(location["country"])
     
     return ", ".join(parts)
+
+async def fetch_weather_forecast(lat: float, lon: float) -> Dict[str, Any]:
+    """
+    Fetch weather forecast data from Open-Meteo API
+    """
+    try:
+        # Setup the Open-Meteo API client with cache and retry on error
+        cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+        retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+        openmeteo = openmeteo_requests.Client(session=retry_session)
+
+        # API parameters
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m",
+            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+            "timezone": "auto"
+        }
+
+        print(f"Fetching weather forecast for coordinates: {lat}, {lon}")
+        responses = openmeteo.weather_api(url, params=params)
+        
+        # Process first location
+        response = responses[0]
+        
+        # Process hourly data
+        hourly = response.Hourly()
+        hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
+        hourly_precipitation = hourly.Variables(1).ValuesAsNumpy()
+        hourly_wind_speed = hourly.Variables(2).ValuesAsNumpy()
+        hourly_wind_direction = hourly.Variables(3).ValuesAsNumpy()
+        hourly_humidity = hourly.Variables(4).ValuesAsNumpy()
+
+        # Create date range for hourly data
+        hourly_dates = pd.date_range(
+            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=hourly.Interval()),
+            inclusive="left"
+        )
+
+        # Process daily data
+        daily = response.Daily()
+        daily_temperature_max = daily.Variables(0).ValuesAsNumpy()
+        daily_temperature_min = daily.Variables(1).ValuesAsNumpy()
+        daily_precipitation_sum = daily.Variables(2).ValuesAsNumpy()
+        daily_wind_speed_max = daily.Variables(3).ValuesAsNumpy()
+
+        # Create date range for daily data
+        daily_dates = pd.date_range(
+            start=pd.to_datetime(daily.Time(), unit="s", utc=True),
+            end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=daily.Interval()),
+            inclusive="left"
+        )
+
+        # Format hourly data
+        hourly_data = []
+        for i, date in enumerate(hourly_dates):
+            if i < len(hourly_temperature_2m):
+                hourly_data.append({
+                    "datetime": date.isoformat(),
+                    "temperature": float(hourly_temperature_2m[i]) if not pd.isna(hourly_temperature_2m[i]) else None,
+                    "precipitation": float(hourly_precipitation[i]) if not pd.isna(hourly_precipitation[i]) else None,
+                    "wind_speed": float(hourly_wind_speed[i]) if not pd.isna(hourly_wind_speed[i]) else None,
+                    "wind_direction": float(hourly_wind_direction[i]) if not pd.isna(hourly_wind_direction[i]) else None,
+                    "humidity": float(hourly_humidity[i]) if not pd.isna(hourly_humidity[i]) else None
+                })
+
+        # Format daily data
+        daily_data = []
+        for i, date in enumerate(daily_dates):
+            if i < len(daily_temperature_max):
+                daily_data.append({
+                    "date": date.strftime('%Y-%m-%d'),
+                    "temperature_max": float(daily_temperature_max[i]) if not pd.isna(daily_temperature_max[i]) else None,
+                    "temperature_min": float(daily_temperature_min[i]) if not pd.isna(daily_temperature_min[i]) else None,
+                    "precipitation_sum": float(daily_precipitation_sum[i]) if not pd.isna(daily_precipitation_sum[i]) else None,
+                    "wind_speed_max": float(daily_wind_speed_max[i]) if not pd.isna(daily_wind_speed_max[i]) else None
+                })
+
+        print(f"Successfully fetched weather data - {len(hourly_data)} hourly points, {len(daily_data)} daily points")
+        
+        return {
+            "success": True,
+            "coordinates": {
+                "latitude": response.Latitude(),
+                "longitude": response.Longitude()
+            },
+            "elevation": response.Elevation(),
+            "timezone": response.Timezone(),
+            "utc_offset_seconds": response.UtcOffsetSeconds(),
+            "hourly_forecast": hourly_data[:48],  # Limit to next 48 hours
+            "daily_forecast": daily_data[:7],     # Limit to next 7 days
+            "source": "Open-Meteo API"
+        }
+        
+    except Exception as e:
+        print(f"Error fetching weather forecast: {str(e)}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Unable to fetch weather forecast data: {str(e)}"
+        )

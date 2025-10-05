@@ -1,0 +1,82 @@
+### Daymet API Test Examples
+### Based on Daymet ORNL Single Pixel Extraction API
+### Coverage: North America (14.5°N to 52.0°N, -131.0°W to -53.0°W)
+### Data: Daily weather/climate data from 1980 onwards
+
+### 1. Basic Weather Data - Michigan (Temperature + Precipitation)
+GET http://localhost:8000/weather/daymet?lat=43.1&lon=-85.3&variables=tmax,tmin,prcp&years=2023
+Content-Type: application/json
+
+### 2. Full Weather Variables - New York City
+GET http://localhost:8000/weather/daymet?lat=40.7128&lon=-74.0060&variables=tmax,tmin,prcp,srad,vp,swe,dayl&years=2023
+Content-Type: application/json
+
+### 3. Multi-Year Data - California (2020-2022)
+GET http://localhost:8000/weather/daymet?lat=34.0522&lon=-118.2437&variables=tmax,tmin,prcp&years=2020,2021,2022
+Content-Type: application/json
+
+### 4. Date Range Query - Chicago (Summer 2023)
+GET http://localhost:8000/weather/daymet?lat=41.8781&lon=-87.6298&variables=tmax,tmin,prcp&start_date=2023-06-01&end_date=2023-08-31
+Content-Type: application/json
+
+### 5. Climate Summary - Toronto (10-year average)
+GET http://localhost:8000/weather/daymet/climate-summary?lat=43.6532&lon=-79.3832&start_year=2013&end_year=2022
+Content-Type: application/json
+
+### 6. Climate Summary - Vancouver (Default 10-year)
+GET http://localhost:8000/weather/daymet/climate-summary?lat=49.2827&lon=-123.1207
+Content-Type: application/json
+
+### 7. Solar Radiation Data - Phoenix, Arizona
+GET http://localhost:8000/weather/daymet?lat=33.4484&lon=-112.0740&variables=srad,tmax,tmin&years=2023
+Content-Type: application/json
+
+### 8. Snow Data - Denver, Colorado
+GET http://localhost:8000/weather/daymet?lat=39.7392&lon=-104.9903&variables=swe,tmax,tmin,prcp&years=2023
+Content-Type: application/json
+
+### 9. Validation Test - Outside Coverage (Should Fail)
+GET http://localhost:8000/weather/daymet?lat=60.0&lon=-85.3&variables=tmax,tmin&years=2023
+Content-Type: application/json
+
+### 10. Validation Test - Outside Coverage Longitude (Should Fail)
+GET http://localhost:8000/weather/daymet?lat=43.1&lon=-140.0&variables=tmax,tmin&years=2023
+Content-Type: application/json
+
+### 11. API Root - Show All Endpoints
+GET http://localhost:8000/
+Content-Type: application/json
+
+### 12. API Documentation
+GET http://localhost:8000/docs
+Content-Type: text/html
+
+###
+### DAYMET VARIABLES EXPLAINED:
+###
+### tmax: Maximum temperature (°C) - Daily maximum air temperature
+### tmin: Minimum temperature (°C) - Daily minimum air temperature  
+### prcp: Precipitation (mm/day) - Daily total precipitation
+### srad: Shortwave radiation (W/m²) - Daily total solar radiation
+### vp: Vapor pressure (Pa) - Daily average vapor pressure
+### swe: Snow-water equivalent (kg/m²) - Daily snow water equivalent
+### dayl: Daylength (seconds) - Duration of daylight
+###
+### COVERAGE AREA:
+### - Latitude: 14.5°N to 52.0°N (Mexico to Northern Canada)
+### - Longitude: -131.0°W to -53.0°W (Pacific to Atlantic)
+### - Temporal: 1980 to latest complete year
+### - Resolution: 1km grid
+###
+### EXAMPLE LOCATIONS WITHIN COVERAGE:
+### - New York City: 40.7128, -74.0060
+### - Los Angeles: 34.0522, -118.2437
+### - Chicago: 41.8781, -87.6298
+### - Toronto: 43.6532, -79.3832
+### - Vancouver: 49.2827, -123.1207
+### - Mexico City: 19.4326, -99.1332
+### - Miami: 25.7617, -80.1918
+### - Seattle: 47.6062, -122.3321
+### - Denver: 39.7392, -104.9903
+### - Phoenix: 33.4484, -112.0740
+###

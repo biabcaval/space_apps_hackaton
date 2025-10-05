@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from datetime import datetime, timezone
 from collections import defaultdict
 import statistics
-from .config import API_KEYS
+from app.config import API_KEYS
 
 async def fetch_pollution_data(lat: float, lon: float, endpoint: str):
     """

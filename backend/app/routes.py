@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from .services import fetch_pollution_data, fetch_daily_forecast_data
+from app.services import fetch_pollution_data, fetch_daily_forecast_data
 
 router = APIRouter()
 

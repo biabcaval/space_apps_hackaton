@@ -540,10 +540,10 @@ def find_available_data(
     end_date: str,
     POI_lat: float,
     POI_lon: float,
-    max_days: int = 7  # Reduced from 30 to 7 days
+    max_days: int = 30
 ) -> Tuple[Optional[str], Optional[list]]:
     """
-    Search for available TEMPO data by incrementing days backwards
+    Search for available TEMPO data within the date range and backwards if needed
     
     Parameters:
     gas: Gas type (NO2, HCHO, O3PROF, O3TOT)
@@ -551,16 +551,17 @@ def find_available_data(
     end_date: End date in format "YYYY-MM-DD"
     POI_lat: Point of interest latitude
     POI_lon: Point of interest longitude
-    max_days: Maximum number of days to search backwards
+    max_days: Maximum number of days to search backwards from end_date
     
     Returns:
     tuple: (date_found, POI_results) or (None, None) if not found
     """
-    # Convert string to datetime
-    current_date = datetime.strptime(start_date, "%Y-%m-%d")
+    # Convert strings to datetime
+    end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
+    current_date = end_datetime
     
     print(f"🔍 Searching for TEMPO {gas} data near ({POI_lat:.4f}, {POI_lon:.4f})")
-    print(f"   Searching up to {max_days} days backwards from {start_date}...")
+    print(f"   Searching up to {max_days} days backwards from {end_date}...")
     
     for day in range(max_days):
         # Format current date
@@ -568,19 +569,25 @@ def find_available_data(
         date_start_time = f"{date_str} 00:00:00"
         date_end_time = f"{date_str} 23:59:59"
         
-        # Search for data
-        POI_results = get_poi_results(gas, date_start_time, date_end_time, POI_lat, POI_lon, version="V3")
+        print(f"   Checking {date_str}...")
         
-        # If found data, return
-        if len(POI_results) > 0:
-            print(f"✅ Found {len(POI_results)} TEMPO data file(s) for {date_str}")
-            return date_str, POI_results
+        # Search for data
+        try:
+            POI_results = get_poi_results(gas, date_start_time, date_end_time, POI_lat, POI_lon, version="V3")
+            
+            # If found data, return
+            if len(POI_results) > 0:
+                print(f"✅ Found {len(POI_results)} TEMPO data file(s) for {date_str}")
+                return date_str, POI_results
+        except Exception as e:
+            print(f"   Error searching {date_str}: {str(e)}")
         
         # Decrement one day
         current_date -= timedelta(days=1)
     
     print(f"❌ No TEMPO data found in the last {max_days} days for this location")
     print(f"   Note: TEMPO satellite data may not be available for all US locations/dates")
+    print(f"   TEMPO data is typically available 2-3 days after collection")
     return None, None
 
 
@@ -619,7 +626,9 @@ async def fetch_tempo_gas_volume(
         if not found_date or not POI_results:
             raise HTTPException(
                 status_code=404,
-                detail=f"No TEMPO {gas} data found for the specified date range and location"
+                detail=f"No TEMPO {gas} data found for the specified date range and location. "
+                       f"TEMPO satellite data is only available for US locations and has a 2-3 day processing delay. "
+                       f"Try selecting a location in the continental United States."
             )
         
         print(f"📊 Processing TEMPO data for: {found_date}")

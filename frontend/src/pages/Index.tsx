@@ -78,19 +78,23 @@ const Index = () => {
         const data = await api.get("/air-pollution/current", { lat, lon });
         setAirPollutionData(data);
       } else {
-        // TEMPO API - fetch gas data (e.g., NO2) for the last 7 days
+        // TEMPO API - fetch gas data (e.g., NO2)
+        // Try to get current data first, backend will search backwards if not available
         const today = new Date();
-        const endDate = today.toISOString().split('T')[0]; // Today
-        const past = new Date(today);
-        past.setDate(past.getDate() - 7);
-        const startDate = past.toISOString().split('T')[0]; // 7 days ago
+        const endDateStr = today.toISOString().split('T')[0]; // Today
+        
+        // Start date is not really used for searching, but required by API
+        // The find_available_data function will search backwards from end_date
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 30); // 30 days ago (for reference)
+        const startDateStr = startDate.toISOString().split('T')[0];
         
         const data = await api.get("/air-pollution/tempo", { 
           gas: "NO2", 
           lat, 
           lon,
-          start_date: startDate,
-          end_date: endDate
+          start_date: startDateStr,
+          end_date: endDateStr
         });
         setAirPollutionData(data);
       }
@@ -98,7 +102,7 @@ const Index = () => {
       console.error('Error fetching air pollution data:', error);
       
       const errorMessage = dataSource === "tempo" 
-        ? "TEMPO satellite data not available for this location/date. Try a different US location or switch to OpenWeather."
+        ? "TEMPO satellite data not available for this location. Note: TEMPO only covers the continental US and has a 2-3 day processing delay. Try a major US city or switch to OpenWeather for global coverage."
         : "Unable to fetch air quality data. Please try again.";
       
       toast({
@@ -804,14 +808,6 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                 </div>
               </div>
             )}
-
-            {/* Weather Forecast Section */}
-            <ErrorBoundary>
-              <WeatherForecast 
-                weatherData={weatherData} 
-                isLoading={isLoadingWeather} 
-              />
-            </ErrorBoundary>
 
             {/* Daymet Climate Visualization Section */}
             {showDaymetViz && (

@@ -1,81 +1,30 @@
 import express from "express";
-import axios from "axios";
 import dotenv from "dotenv";
+import mongoose from 'mongoose';
+import userRoutes from './routes/userRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import NotificationService from './services/NotificationService.js';
 
-// Carrega variáveis de ambiente
 dotenv.config();
 
 const app = express();
-const API_TOKEN = process.env.WAQI_TOKEN;
 
-// Middleware para verificar token
-const checkApiToken = (req, res, next) => {
-  if (!API_TOKEN) {
-    return res.status(500).json({
-      error: "Token da API WAQI não configurado"
-    });
-  }
-  next();
-};
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/air-quality')
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Inicializa o serviço de notificações após conectar ao banco
+    NotificationService.initialize()
+      .then(() => console.log('Notification service initialized'))
+      .catch(err => console.error('Error initializing notification service:', err));
+  })
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Middleware para validar parâmetros
-const validateCoordinates = (req, res, next) => {
-  const { lat, lon } = req.query;
-  
-  if (!lat || !lon) {
-    return res.status(400).json({
-      error: "Latitude e longitude são obrigatórios"
-    });
-  }
-
-  if (isNaN(lat) || isNaN(lon)) {
-    return res.status(400).json({
-      error: "Latitude e longitude devem ser números"
-    });
-  }
-
-  next();
-};
-
-app.get("/air-quality", checkApiToken, validateCoordinates, async (req, res) => {
-  const { lat, lon } = req.query;
-  
-  try {
-    const response = await axios.get(
-      `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${API_TOKEN}`,
-      {
-        timeout: 5000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (response.data.status === 'error') {
-      return res.status(400).json({
-        error: response.data.data
-      });
-    }
-
-    res.json(response.data);
-  } catch (err) {
-    console.error('Erro na API WAQI:', err.message);
-    
-    if (err.response) {
-      return res.status(err.response.status).json({
-        error: `Erro na API WAQI: ${err.response.data}`
-      });
-    }
-
-    res.status(500).json({
-      error: "Erro interno ao consultar dados de qualidade do ar"
-    });
-  }
-});
+app.use(express.json());
+app.use('/api', userRoutes);
+app.use('/api', notificationRoutes);
 
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

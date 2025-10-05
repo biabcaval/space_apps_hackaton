@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node src/wweb.js"
+    "start": "node src/api.js",
+    "dev": "nodemon src/api.js"
   },
   "keywords": [],
   "author": "",
@@ -18,9 +19,13 @@
     "got": "^14.4.9",
     "moment-timezone": "^0.5.46",
     "mongoose": "^8.7.3",
+    "node-cron": "^3.0.2",
     "path": "^0.12.7",
     "qrcode-terminal": "^0.12.0",
     "url": "^0.11.4",
     "whatsapp-web.js": "^1.26.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }

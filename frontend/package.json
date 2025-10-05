@@ -3,11 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://biabcaval.github.io/space_apps_hackaton",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && echo > dist/.nojekyll && npx gh-pages -d dist -f"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -43,6 +45,7 @@
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
+    "gh-pages": "^6.3.0",
     "globals": "^16.4.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",

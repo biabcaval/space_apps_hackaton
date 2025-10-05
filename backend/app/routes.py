@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Query
-from typing import Optional, Dict
+from fastapi import APIRouter, Query, Body
+from typing import Optional, Dict, Any
 from app.services import (
     fetch_pollution_data, 
     fetch_daily_forecast_data, 
@@ -8,7 +8,8 @@ from app.services import (
     fetch_tempo_gas_volume,
     fetch_daymet_data,
     fetch_daymet_climate_summary,
-    generate_health_advice
+    generate_health_advice,
+    save_json_to_mongodb
 )
 
 router = APIRouter()
@@ -28,6 +29,8 @@ async def read_root():
             "tempo_gas_data": "/air-pollution/tempo?gas={gas}&lat={lat}&lon={lon}&start_date={YYYY-MM-DD}&end_date={YYYY-MM-DD}",
             "daymet_weather": "/weather/daymet?lat={lat}&lon={lon}&variables={vars}&years={years}",
             "daymet_climate": "/weather/daymet/climate-summary?lat={lat}&lon={lon}&start_year={year}&end_year={year}",
+            "health_advice": "POST /health/advice?aqi={aqi}&risk_group={group}&pm2_5={pm2_5}&pm10={pm10}&no2={no2}&o3={o3}",
+            "store_data": "POST /data/store?collection={collection_name} (with JSON body)",
             "docs": "/docs"
         }
     }
@@ -194,3 +197,37 @@ async def get_health_advice(
         pollutants['o3'] = o3
     
     return await generate_health_advice(aqi, risk_group, pollutants if pollutants else None)
+
+
+@router.post("/data/store")
+async def store_json_data(
+    collection: str = Query(..., description="MongoDB collection name to store data in"),
+    data: Dict[str, Any] = Body(..., description="JSON data to store")
+):
+    """
+    Store JSON data to MongoDB
+    
+    This endpoint accepts any JSON data and stores it in the specified MongoDB collection.
+    A timestamp will be automatically added if not present in the data.
+    
+    Parameters:
+    - collection: Name of the MongoDB collection (e.g., 'notifications', 'user_data', 'sensor_readings')
+    - data: JSON object containing the data to store
+    
+    Returns:
+    - success: Boolean indicating if the operation was successful
+    - collection: Name of the collection where data was stored
+    - document_id: MongoDB ObjectId of the inserted document
+    - timestamp: ISO timestamp of when the data was stored
+    
+    Example:
+    ```
+    POST /data/store?collection=notifications
+    {
+        "user_id": "12345",
+        "message": "Air quality alert",
+        "location": {"lat": 40.7128, "lon": -74.0060}
+    }
+    ```
+    """
+    return await save_json_to_mongodb(collection, data)

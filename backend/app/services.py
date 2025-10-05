@@ -15,7 +15,8 @@ from app.config import (
     OPENWEATHER_API_KEYS,
     NASA_EARTHDATA_USERNAME,
     NASA_EARTHDATA_PASSWORD,
-    TEMPO_DATA_DIR
+    TEMPO_DATA_DIR,
+    get_mongodb_database
 )
 
 async def fetch_pollution_data(lat: float, lon: float, endpoint: str):
@@ -1479,3 +1480,53 @@ def get_fallback_advice(aqi: int, risk_group: str) -> str:
     )
     
     return f"{base_advice.get(aqi, 'Air quality information')}\n\n{advice}"
+
+
+# ============================================================================
+# MongoDB Data Storage Functions
+# ============================================================================
+
+async def save_json_to_mongodb(
+    collection_name: str,
+    data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Save JSON data to MongoDB
+    
+    Parameters:
+    collection_name: Name of the MongoDB collection to save to
+    data: JSON data to save (dictionary)
+    
+    Returns:
+    Dictionary with success status and inserted document ID
+    """
+    try:
+        # Get MongoDB database
+        db = get_mongodb_database()
+        collection = db[collection_name]
+        
+        # Add timestamp if not present
+        from datetime import datetime, timezone
+        if 'timestamp' not in data:
+            data['timestamp'] = datetime.now(timezone.utc).isoformat()
+        
+        # Insert document
+        result = await collection.insert_one(data)
+        
+        print(f"✅ Successfully saved document to MongoDB collection '{collection_name}'")
+        print(f"   Document ID: {result.inserted_id}")
+        
+        return {
+            "success": True,
+            "collection": collection_name,
+            "document_id": str(result.inserted_id),
+            "timestamp": data.get('timestamp'),
+            "message": "Data saved successfully to MongoDB"
+        }
+        
+    except Exception as e:
+        print(f"❌ Error saving to MongoDB: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save data to MongoDB: {str(e)}"
+        )

@@ -1,8 +1,26 @@
 INFO:     Will watch for changes in these directories: ['/Users/biabc/Documents/space_apps_hackaton/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [50589] using StatReload
-INFO:     Started server process [50603]
+INFO:     Started reloader process [65963] using StatReload
+INFO:     Started server process [65977]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-Loaded 3 OpenWeatherMap API key(s) for fallback support
-INFO:     127.0.0.1:57520 - "GET / HTTP/1.1" 200 OK
+Loaded 1 OpenWeatherMap API key(s) for fallback support
+✅ Connected to MongoDB at mongodb://mongo:qWFNXBgMtmzAqlSkbtHnmrNHLSUreLwA@centerbeam.proxy.rlwy.net:45179
+🚀 Application started
+✅ Successfully saved document to MongoDB collection 'test_railway'
+   Document ID: 68e2f08ead59d27a0eebb388
+INFO:     127.0.0.1:58275 - "POST /data/store?collection=test_railway HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [65977]
+INFO:     Started server process [67011]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Loaded 1 OpenWeatherMap API key(s) for fallback support
+✅ Connected to MongoDB at mongodb://mongo:qWFNXBgMtmzAqlSkbtHnmrNHLSUreLwA@centerbeam.proxy.rlwy.net:45179
+🚀 Application started
+✅ Successfully saved document to MongoDB collection 'notifications'
+   Document ID: 68e2f0e3879e3acc94966250
+INFO:     127.0.0.1:58312 - "POST /data/store?collection=notifications HTTP/1.1" 200 OK

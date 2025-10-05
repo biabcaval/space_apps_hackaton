@@ -1,0 +1,163 @@
+### MongoDB Data Storage Endpoint Tests
+### Store any JSON data to MongoDB collections
+
+### 1. Store user notification data
+POST http://localhost:8000/data/store?collection=notifications
+Content-Type: application/json
+
+{
+  "user_id": "user123",
+  "name": "John Doe",
+  "phone": "+1234567890",
+  "location": {
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "address": "New York, NY"
+  },
+  "preferences": {
+    "notify_when_aqi_above": 3,
+    "notification_time": "09:00"
+  }
+}
+
+### 2. Store sensor reading data
+POST http://localhost:8000/data/store?collection=sensor_readings
+Content-Type: application/json
+
+{
+  "sensor_id": "sensor001",
+  "location": {
+    "latitude": 34.0522,
+    "longitude": -118.2437
+  },
+  "aqi": 3,
+  "pollutants": {
+    "pm2_5": 35.5,
+    "pm10": 60.2,
+    "no2": 85.3,
+    "o3": 110.7
+  },
+  "weather": {
+    "temperature": 22.5,
+    "humidity": 65,
+    "wind_speed": 12.3
+  }
+}
+
+### 3. Store air quality alert
+POST http://localhost:8000/data/store?collection=alerts
+Content-Type: application/json
+
+{
+  "alert_type": "high_aqi",
+  "severity": "warning",
+  "aqi": 4,
+  "location": "Los Angeles, CA",
+  "coordinates": {
+    "lat": 34.0522,
+    "lon": -118.2437
+  },
+  "message": "Air quality is poor. Sensitive groups should limit outdoor activities.",
+  "affected_groups": [
+    "Elderly (65+)",
+    "Children",
+    "People with Respiratory Conditions"
+  ]
+}
+
+### 4. Store user feedback
+POST http://localhost:8000/data/store?collection=feedback
+Content-Type: application/json
+
+{
+  "user_id": "user456",
+  "rating": 5,
+  "comment": "The health advice is very helpful!",
+  "feature": "health_recommendations",
+  "platform": "web"
+}
+
+### 5. Store location search history
+POST http://localhost:8000/data/store?collection=search_history
+Content-Type: application/json
+
+{
+  "user_id": "user789",
+  "search_query": "San Francisco",
+  "results_count": 5,
+  "selected_result": {
+    "name": "San Francisco",
+    "state": "California",
+    "country": "US",
+    "lat": 37.7749,
+    "lon": -122.4194
+  }
+}
+
+### 6. Store air quality comparison data
+POST http://localhost:8000/data/store?collection=comparisons
+Content-Type: application/json
+
+{
+  "comparison_id": "cmp_001",
+  "locations": [
+    {
+      "name": "New York",
+      "aqi": 3,
+      "pm2_5": 35.5
+    },
+    {
+      "name": "Los Angeles",
+      "aqi": 4,
+      "pm2_5": 55.2
+    }
+  ],
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-01-07"
+  },
+  "notes": "Weekly comparison for major cities"
+}
+
+### 7. Test with custom timestamp
+POST http://localhost:8000/data/store?collection=custom_data
+Content-Type: application/json
+
+{
+  "data_type": "test_with_timestamp",
+  "timestamp": "2024-01-15T12:00:00Z",
+  "value": 42,
+  "description": "This document has a custom timestamp"
+}
+
+### 8. Store complex nested data
+POST http://localhost:8000/data/store?collection=complex_data
+Content-Type: application/json
+
+{
+  "project": "air_quality_monitor",
+  "data": {
+    "measurements": [
+      {
+        "time": "09:00",
+        "aqi": 2,
+        "pollutants": {"pm2_5": 15.2, "o3": 75.5}
+      },
+      {
+        "time": "12:00",
+        "aqi": 3,
+        "pollutants": {"pm2_5": 38.1, "o3": 105.2}
+      },
+      {
+        "time": "15:00",
+        "aqi": 4,
+        "pollutants": {"pm2_5": 52.7, "o3": 125.8}
+      }
+    ],
+    "statistics": {
+      "average_aqi": 3,
+      "max_pm2_5": 52.7,
+      "location": "Test Station Alpha"
+    }
+  }
+}

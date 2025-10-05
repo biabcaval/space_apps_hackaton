@@ -3,14 +3,44 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { AlertCircle } from "lucide-react";
+import { useToast } from "./ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+
+interface AirQualityData {
+  aqi: number;
+  city: {
+    name: string;
+    location: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  pollutants: {
+    co: number;
+    no2: number;
+    o3: number;
+    pm10: number;
+    pm25: number;
+    so2: number;
+  };
+}
+
+interface ApiError {
+  message: string;
+  status: number;
+}
 
 const AirQualityMap = () => {
+  const { toast } = useToast();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState("");
   const [tokenInput, setTokenInput] = useState("");
   const [showTokenInput, setShowTokenInput] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const initializeMap = (token: string) => {
     if (!mapContainer.current || map.current) return;
@@ -100,84 +130,100 @@ const AirQualityMap = () => {
     return "Hazardous";
   };
 
-  const handleTokenSubmit = (e: React.FormEvent) => {
+  const handleTokenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (tokenInput.trim()) {
+    if (!tokenInput.trim()) {
+      toast({
+        title: "Token Required",
+        description: "Please enter your Mapbox token to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await initializeMap(tokenInput);
       setMapboxToken(tokenInput);
       setShowTokenInput(false);
-      initializeMap(tokenInput);
+      toast({
+        title: "Map Loaded Successfully",
+        description: "The air quality map has been initialized",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Loading Map",
+        description: "Please check your Mapbox token and try again",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      map.current?.remove();
-    };
-  }, []);
-
   return (
     <div className="relative w-full h-full">
-      {showTokenInput ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-card/95 backdrop-blur-sm z-10 p-6">
-          <div className="max-w-md w-full space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
-              <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
-              <div className="flex-1 space-y-2">
-                <h3 className="font-semibold">Mapbox Token Required</h3>
-                <p className="text-sm text-muted-foreground">
-                  To display the air quality map, please enter your Mapbox public token.
-                  Get yours at{" "}
-                  <a
-                    href="https://mapbox.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    mapbox.com
-                  </a>
-                </p>
-              </div>
-            </div>
-            
-            <form onSubmit={handleTokenSubmit} className="space-y-3">
-              <Input
-                type="text"
-                placeholder="Enter your Mapbox public token"
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <Button type="submit" className="w-full">
-                Load Map
-              </Button>
-            </form>
-          </div>
-        </div>
-      ) : null}
+      <Dialog open={showTokenInput} onOpenChange={setShowTokenInput}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mapbox Token Required</DialogTitle>
+          </DialogHeader>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Important</AlertTitle>
+            <AlertDescription>
+              To display the air quality map, please enter your Mapbox public token.
+              Get yours at{" "}
+              <a
+                href="https://mapbox.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                mapbox.com
+              </a>
+            </AlertDescription>
+          </Alert>
+
+          <form onSubmit={handleTokenSubmit} className="space-y-3">
+            <Input
+              type="text"
+              placeholder="Enter your Mapbox public token"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              className="font-mono text-sm"
+            />
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Loading..." : "Load Map"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
       
       <div ref={mapContainer} className="w-full h-full rounded-lg shadow-lg" />
       
-      <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-xs">
-        <h3 className="font-semibold mb-3">Air Quality Index</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "hsl(145, 65%, 50%)" }} />
-            <span>0-50: Good</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "hsl(45, 95%, 55%)" }} />
-            <span>51-100: Moderate</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "hsl(30, 95%, 55%)" }} />
-            <span>101-150: Unhealthy for Sensitive</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "hsl(10, 85%, 55%)" }} />
-            <span>151-200: Unhealthy</span>
-          </div>
-        </div>
-      </div>
+      <Card className="absolute bottom-6 left-6 w-64">
+        <CardHeader>
+          <CardTitle>Air Quality Index</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {[
+            { color: "hsl(145, 65%, 50%)", label: "0-50: Good" },
+            { color: "hsl(45, 95%, 55%)", label: "51-100: Moderate" },
+            { color: "hsl(30, 95%, 55%)", label: "101-150: Unhealthy for Sensitive" },
+            { color: "hsl(10, 85%, 55%)", label: "151-200: Unhealthy" },
+          ].map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };

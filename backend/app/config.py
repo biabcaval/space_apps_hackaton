@@ -8,6 +8,7 @@ API_KEYS = ["039e0e90eb64a66b02f4a8c6eb85dc37"]
 ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://biabcaval.github.io"
 ]
 
 def create_app():

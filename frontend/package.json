@@ -9,7 +9,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && echo > dist/.nojekyll && npx gh-pages -d dist -f"
+    "predeploy": "npm run build",
+    "deploy": "touch dist/.nojekyll && gh-pages -d dist -f"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

@@ -5,6 +5,7 @@ import UserLocationMap from "../components/UserLocationMap";
 import WeatherForecast from "../components/WeatherForecast";
 import DaymetVisualization from "../components/DaymetVisualization";
 import ErrorBoundary from "../components/ErrorBoundary";
+import HealthInfoTab from "../components/HealthInfoTab";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { MapPin, Loader2, Bell, Search, Satellite, Cloud, BarChart3 } from "lucide-react";
@@ -136,6 +137,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
     setIsLoadingForecast(false);
   }
 };
+
 
   // Function to fetch weather forecast data
   const fetchWeatherForecast = async (lat: number, lon: number) => {
@@ -461,19 +463,20 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
 
             {/* Map and Air Quality Display */}
             {latitude && longitude ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Map Section */}
-                <div className="bg-card rounded-lg shadow-lg p-6 border">
-                  <h3 className="text-xl font-semibold mb-4">Map View</h3>
-                  <UserLocationMap 
-                    latitude={latitude} 
-                    longitude={longitude}
-                    className="h-96 w-full"
-                  />
-                </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Map Section */}
+                  <div className="bg-card rounded-lg shadow-lg p-6 border">
+                    <h3 className="text-xl font-semibold mb-4">Map View</h3>
+                    <UserLocationMap 
+                      latitude={latitude} 
+                      longitude={longitude}
+                      className="h-96 w-full"
+                    />
+                  </div>
 
-                {/* Air Quality Section */}
-                <div className="bg-card rounded-lg shadow-lg p-6 border">
+                  {/* Air Quality Section */}
+                  <div className="bg-card rounded-lg shadow-lg p-6 border">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold">Air Quality Data</h3>
                     {latitude && longitude && (
@@ -755,6 +758,36 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                     </div>
                   )}
                 </div>
+                </div>
+
+                {/* Risk Group Health Info Section */}
+                <div className="bg-card rounded-lg shadow-lg p-6 border">
+                  <h3 className="text-xl font-semibold mb-4">Risk Group Health Info</h3>
+                  {airPollutionData ? (
+                    <HealthInfoTab
+                      airQualityIndex={airPollutionData.data.list[0].main.aqi}
+                      gasConcentration={airPollutionData.data.list[0].components.no2}
+                      location={locationAddress || `Coordinates: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-80">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                          <MapPin className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground">Load air quality data to see health recommendations</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Weather Forecast Section */}
+                <ErrorBoundary>
+                  <WeatherForecast 
+                    weatherData={weatherData} 
+                    isLoading={isLoadingWeather} 
+                  />
+                </ErrorBoundary>
               </div>
             ) : (
               <div className="bg-card rounded-lg shadow-lg p-12 border">

@@ -22,6 +22,43 @@ class UserService {
     }
   }
 
+  async updateUserLocation(userId, location) {
+    try {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { location: location },
+        { new: true, runValidators: true }
+      );
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      return user;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar localização do usuário: ${error.message}`);
+    }
+  }
+
+  // update user notification preferences -> timeOfDay
+  async updateUserNotificationPreferences(userId, preferences) {
+    try {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { notificationPreferences: preferences },
+        { new: true, runValidators: true }
+      );
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      return user;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar preferências de notificação do usuário: ${error.message}`);
+    }
+  }
+
   /**
    * Busca todos os usuários
    */
@@ -46,6 +83,15 @@ class UserService {
       return user;
     } catch (error) {
       throw new Error(`Erro ao buscar usuário: ${error.message}`);
+    }
+  }
+
+  async getUserByWhatsAppNumber(phoneNumber) {
+    try {
+      const user = await User.findOne({ phoneNumber: phoneNumber });
+      return user;
+    } catch (error) {
+      throw new Error(`Erro ao buscar usuário pelo WhatsApp: ${error.message}`);
     }
   }
 

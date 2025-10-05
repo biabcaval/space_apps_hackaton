@@ -1,24 +1,29 @@
 #!/bin/bash
+set -e
 
-# Criando diretório para persistência dos dados
-mkdir -p ~/mongodb/data
+# Aguarda o MongoDB iniciar
+until mongosh --host mongodb --port 27017 -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "print(\"waited for connection\")"
+do
+    echo "Aguardando conexão com MongoDB..."
+    sleep 2
+done
 
-# Definindo variáveis de ambiente
-MONGO_ROOT_USERNAME=admin
-MONGO_ROOT_PASSWORD=senha123
-MONGO_PORT=27017
+# Cria o banco de dados e usuário
+mongosh --host mongodb --port 27017 -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin <<EOF
+use $MONGO_INITDB_DATABASE
 
-# Executando o container MongoDB
-docker run -d \
-    --name mongodb \
-    -p ${MONGO_PORT}:27017 \
-    -v ~/mongodb/data:/data/db \
-    -e MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME} \
-    -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD} \
-    --restart unless-stopped \
-    mongo:latest
+db.createUser({
+  user: '$MONGO_INITDB_ROOT_USERNAME',
+  pwd: '$MONGO_INITDB_ROOT_PASSWORD',
+  roles: [{
+    role: 'readWrite',
+    db: '$MONGO_INITDB_DATABASE'
+  }]
+});
 
-# Verificando se o container está rodando
-echo "Verificando status do container..."
-sleep 3
-docker ps | grep mongodb
+# Criando algumas coleções iniciais
+db.createCollection('users');
+db.createCollection('notifications');
+
+print("Inicialização do MongoDB concluída!");
+EOF

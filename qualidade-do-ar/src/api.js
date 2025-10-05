@@ -4,18 +4,23 @@ import mongoose from 'mongoose';
 import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import NotificationService from './services/NotificationService.js';
+import SchedulerService from "./services/SchedulerService.js";
 
 dotenv.config();
 
 const app = express();
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/air-quality')
-  .then(() => {
+const mongoUri = `mongodb://${process.env.MONGO_USER || 'admin'}:${process.env.MONGO_PASSWORD || 'senha123'}@localhost:27017/${process.env.DB_NAME || 'air-quality'}?authSource=admin`;
+
+mongoose.connect(mongoUri)
+  .then(async () => {
     console.log('Connected to MongoDB');
-    // Inicializa o serviço de notificações após conectar ao banco
-    NotificationService.initialize()
-      .then(() => console.log('Notification service initialized'))
-      .catch(err => console.error('Error initializing notification service:', err));
+    try {
+      await NotificationService.initialize();
+      console.log('Todos os serviços inicializados com sucesso');
+    } catch (err) {
+      console.error('Erro na inicialização dos serviços:', err);
+    }
   })
   .catch(err => console.error('MongoDB connection error:', err));
 

@@ -27,24 +27,48 @@ class Api {
   }
 
   async get<T>(endpoint: string, params = {}): Promise<T> {
+    // Tentar a API primária (ngrok) primeiro
     try {
+      console.log('Tentando API primária:', API_CONFIG.primary);
       const response = await this.primaryApi.get<ApiResponse<T>>(endpoint, { params });
+      console.log('Sucesso com API primária');
       return response.data;
-    } catch (error) {
-      console.log('Tentando API de fallback...', error);
-      const fallbackResponse = await this.fallbackApi.get<ApiResponse<T>>(endpoint, { params });
-      return fallbackResponse.data;
+    } catch (primaryError) {
+      console.error('Erro na API primária:', primaryError);
+      
+      // Tentar a API de fallback (localhost) em caso de erro
+      try {
+        console.log('Tentando API de fallback:', API_CONFIG.fallback);
+        const fallbackResponse = await this.fallbackApi.get<ApiResponse<T>>(endpoint, { params });
+        console.log('Sucesso com API de fallback');
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.error('Erro na API de fallback:', fallbackError);
+        throw new Error('Ambas as APIs falharam');
+      }
     }
   }
 
   async post<T>(endpoint: string, data = {}): Promise<T> {
+    // Tentar a API primária (ngrok) primeiro
     try {
+      console.log('Tentando API primária:', API_CONFIG.primary);
       const response = await this.primaryApi.post<ApiResponse<T>>(endpoint, data);
+      console.log('Sucesso com API primária');
       return response.data;
-    } catch (error) {
-      console.log('Tentando API de fallback...', error);
-      const fallbackResponse = await this.fallbackApi.post<ApiResponse<T>>(endpoint, data);
-      return fallbackResponse.data;
+    } catch (primaryError) {
+      console.error('Erro na API primária:', primaryError);
+      
+      // Tentar a API de fallback (localhost) em caso de erro
+      try {
+        console.log('Tentando API de fallback:', API_CONFIG.fallback);
+        const fallbackResponse = await this.fallbackApi.post<ApiResponse<T>>(endpoint, data);
+        console.log('Sucesso com API de fallback');
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.error('Erro na API de fallback:', fallbackError);
+        throw new Error('Ambas as APIs falharam');
+      }
     }
   }
 }

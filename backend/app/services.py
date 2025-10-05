@@ -690,3 +690,202 @@ async def fetch_tempo_gas_volume(
             status_code=500,
             detail=f"Error processing TEMPO data: {str(e)}"
         )
+
+
+# ============================================================================
+# Daymet API Functions
+# ============================================================================
+
+async def fetch_daymet_data(
+    lat: float,
+    lon: float,
+    variables: str = "tmax,tmin,prcp,srad,vp,swe,dayl",
+    years: str = None,
+    start_date: str = None,
+    end_date: str = None
+) -> Dict[str, Any]:
+    """
+    Fetch daily weather/climate data from Daymet API
+    
+    Parameters:
+    lat: Latitude (14.5°N to 52.0°N)
+    lon: Longitude (-131.0°W to -53.0°W)
+    variables: Comma-separated list of variables (tmax,tmin,prcp,srad,vp,swe,dayl)
+    years: Comma-separated list of years (1980 to latest)
+    start_date: Start date in YYYY-MM-DD format
+    end_date: End date in YYYY-MM-DD format
+    
+    Returns:
+    Dictionary with processed Daymet data
+    """
+    try:
+        # Validate coordinates for North America coverage
+        if not (14.5 <= lat <= 52.0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Latitude {lat} is outside Daymet coverage area (14.5°N to 52.0°N)"
+            )
+        
+        if not (-131.0 <= lon <= -53.0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Longitude {lon} is outside Daymet coverage area (-131.0°W to -53.0°W)"
+            )
+        
+        # Build API URL
+        base_url = "https://daymet.ornl.gov/single-pixel/api/data"
+        params = {
+            "lat": lat,
+            "lon": lon,
+            "vars": variables
+        }
+        
+        # Add time parameters
+        if years:
+            params["years"] = years
+        elif start_date and end_date:
+            params["start"] = start_date
+            params["end"] = end_date
+        else:
+            # Default to current year
+            current_year = datetime.now().year
+            params["years"] = str(current_year - 1)  # Use previous year for complete data
+        
+        print(f"🌡️ Fetching Daymet data for coordinates: {lat}, {lon}")
+        print(f"📊 Variables: {variables}")
+        print(f"📅 Parameters: {params}")
+        
+        # Make request to Daymet API
+        response = requests.get(base_url, params=params, timeout=30)
+        response.raise_for_status()
+        
+        # Parse CSV response
+        csv_data = response.text
+        lines = csv_data.strip().split('\n')
+        
+        if len(lines) < 8:
+            raise HTTPException(
+                status_code=404,
+                detail="No data returned from Daymet API"
+            )
+        
+        # Extract metadata (first 6 lines)
+        metadata = {}
+        for i, line in enumerate(lines[:6]):
+            if ':' in line:
+                key, value = line.split(':', 1)
+                metadata[key.strip()] = value.strip()
+        
+        # Find the header line (contains column names with units)
+        header_line_idx = 6  # Usually line 7 (index 6)
+        header = lines[header_line_idx].split(',')
+        
+        # Parse data rows
+        data_rows = []
+        for line in lines[header_line_idx + 1:]:
+            if line.strip():
+                values = line.split(',')
+                row_data = {}
+                for i, value in enumerate(values):
+                    if i < len(header):
+                        try:
+                            # Try to convert to float for numeric values
+                            if value.replace('.', '').replace('-', '').replace('+', '').isdigit():
+                                row_data[header[i]] = float(value)
+                            else:
+                                row_data[header[i]] = value
+                        except (ValueError, AttributeError):
+                            row_data[header[i]] = value
+                data_rows.append(row_data)
+        
+        # Calculate summary statistics
+        summary_stats = {}
+        numeric_columns = ['tmax (deg c)', 'tmin (deg c)', 'prcp (mm/day)', 'srad (W/m^2)', 'vp (Pa)', 'swe (kg/m^2)', 'dayl (s)']
+        
+        for col in numeric_columns:
+            if col in header:
+                values = [row[col] for row in data_rows if isinstance(row.get(col), (int, float))]
+                if values:
+                    summary_stats[col] = {
+                        "mean": round(sum(values) / len(values), 2),
+                        "min": min(values),
+                        "max": max(values),
+                        "count": len(values)
+                    }
+        
+        print(f"✅ Successfully fetched {len(data_rows)} days of Daymet data")
+        
+        return {
+            "success": True,
+            "source": "Daymet ORNL",
+            "location": {
+                "latitude": lat,
+                "longitude": lon
+            },
+            "metadata": metadata,
+            "parameters": params,
+            "data_count": len(data_rows),
+            "summary_statistics": summary_stats,
+            "daily_data": data_rows[:100],  # Limit to first 100 days for response size
+            "raw_csv_sample": lines[:7]  # Include metadata and header
+        }
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Daymet API request failed: {str(e)}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to fetch data from Daymet API: {str(e)}"
+        )
+    except Exception as e:
+        print(f"❌ Error processing Daymet data: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing Daymet data: {str(e)}"
+        )
+
+
+async def fetch_daymet_climate_summary(
+    lat: float,
+    lon: float,
+    start_year: int = None,
+    end_year: int = None
+) -> Dict[str, Any]:
+    """
+    Fetch multi-year climate summary from Daymet API
+    
+    Parameters:
+    lat: Latitude
+    lon: Longitude  
+    start_year: Start year (default: 10 years ago)
+    end_year: End year (default: last year)
+    
+    Returns:
+    Dictionary with climate summary statistics
+    """
+    try:
+        # Default to 10-year climate summary
+        current_year = datetime.now().year
+        if not start_year:
+            start_year = current_year - 11
+        if not end_year:
+            end_year = current_year - 1
+            
+        # Generate years string
+        years = ",".join(str(year) for year in range(start_year, end_year + 1))
+        
+        # Fetch temperature and precipitation data
+        variables = "tmax,tmin,prcp"
+        
+        return await fetch_daymet_data(
+            lat=lat,
+            lon=lon,
+            variables=variables,
+            years=years
+        )
+        
+    except Exception as e:
+        print(f"❌ Error fetching Daymet climate summary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching climate summary: {str(e)}"
+        )

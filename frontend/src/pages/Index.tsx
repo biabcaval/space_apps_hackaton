@@ -30,6 +30,9 @@ const Index = () => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [airPollutionData, setAirPollutionData] = useState<any>(null);
   const [isLoadingAirData, setIsLoadingAirData] = useState(false);
+  const [forecastData, setForecastData] = useState<any>(null);
+  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
   const { toast } = useToast();
 
   // Function to fetch air pollution data
@@ -53,6 +56,34 @@ const Index = () => {
       setIsLoadingAirData(false);
     }
   };
+
+// Function to fetch air pollution forecast (daily averages)
+const fetchAirPollutionForecast = async (lat: number, lon: number) => {
+  setIsLoadingForecast(true);
+  try {
+    const response = await fetch(`http://localhost:8000/air-pollution/forecast-daily?lat=${lat}&lon=${lon}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch air pollution forecast');
+    }
+    const data = await response.json();
+    setForecastData(data);
+    setShowForecast(true);
+    
+    toast({
+      title: "Daily Forecast Loaded!",
+      description: `${data.daily_forecast.length} days of air quality forecast available.`,
+    });
+  } catch (error) {
+    console.error('Error fetching air pollution forecast:', error);
+    toast({
+      title: "Forecast Error",
+      description: "Unable to fetch air quality forecast. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoadingForecast(false);
+  }
+};
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -198,16 +229,125 @@ const Index = () => {
 
                 {/* Air Quality Section */}
                 <div className="bg-card rounded-lg shadow-lg p-6 border">
-                  <h3 className="text-xl font-semibold mb-4">Air Quality Data</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold">Air Quality Data</h3>
+                    {latitude && longitude && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant={showForecast ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => setShowForecast(false)}
+                          disabled={!airPollutionData}
+                        >
+                          Current
+                        </Button>
+                        <Button
+                          variant={showForecast ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => fetchAirPollutionForecast(latitude, longitude)}
+                          disabled={isLoadingForecast}
+                        >
+                          {isLoadingForecast ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            "Forecast"
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   
-                  {isLoadingAirData ? (
+                  {(isLoadingAirData || isLoadingForecast) ? (
                     <div className="flex items-center justify-center h-96">
                       <div className="text-center space-y-4">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                        <p className="text-muted-foreground">Loading air quality data...</p>
+                        <p className="text-muted-foreground">
+                          {isLoadingForecast ? "Loading forecast data..." : "Loading air quality data..."}
+                        </p>
                       </div>
                     </div>
-                  ) : airPollutionData ? (
+                  ) : showForecast && forecastData ? (
+                    <div className="space-y-4">
+                      {/* Daily Forecast Timeline */}
+                      <div className="bg-muted p-4 rounded-lg">
+                        <h4 className="font-semibold mb-3">Daily Air Quality Forecast</h4>
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                          {forecastData.daily_forecast.map((day: any, index: number) => {
+                            const date = new Date(day.date);
+                            return (
+                              <div key={index} className="flex items-center justify-between bg-background p-4 rounded border">
+                                <div className="flex-1">
+                                  <div className="font-medium">
+                                    {date.toLocaleDateString('en-US', { 
+                                      weekday: 'long', 
+                                      month: 'short', 
+                                      day: 'numeric' 
+                                    })}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {getAQIDescription(day.aqi)} • {day.data_points} data points
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Range: AQI {day.min_aqi}-{day.max_aqi}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-primary">AQI {day.aqi}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    PM2.5: {day.components.pm2_5} μg/m³
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                  
+                      {/* Daily Chart Visualization */}
+                      <div className="bg-muted p-4 rounded-lg">
+                        <h4 className="font-semibold mb-3">Daily AQI Trend</h4>
+                        <div className="relative h-32 bg-background rounded p-4">
+                          <div className="flex items-end justify-between h-full">
+                            {forecastData.daily_forecast.map((day: any, index: number) => {
+                              const height = (day.aqi / 5) * 100;
+                              const color = day.aqi <= 2 ? 'bg-green-500' : 
+                                          day.aqi <= 3 ? 'bg-yellow-500' : 
+                                          day.aqi <= 4 ? 'bg-orange-500' : 'bg-red-500';
+                              return (
+                                <div key={index} className="flex flex-col items-center">
+                                  <div 
+                                    className={`w-8 ${color} rounded-t`}
+                                    style={{ height: `${Math.max(height, 10)}%` }}
+                                    title={`${day.day_name}: AQI ${day.aqi} (Range: ${day.min_aqi}-${day.max_aqi})`}
+                                  />
+                                  <div className="text-xs mt-1 text-muted-foreground">
+                                    {new Date(day.date).getDate()}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                          <span>Daily Averages</span>
+                          <span>AQI Scale: 1-5</span>
+                        </div>
+                      </div>
+                  
+                      {/* Raw Forecast Data */}
+                      <details className="bg-muted p-4 rounded-lg">
+                        <summary className="cursor-pointer font-semibold">Raw Daily Forecast Response</summary>
+                        <pre className="mt-2 text-xs overflow-auto max-h-40 bg-background p-2 rounded">
+                          {JSON.stringify(forecastData, null, 2)}
+                        </pre>
+                      </details>
+                    </div>
+                  
+
+                  ) : !showForecast && airPollutionData ? (
                     <div className="space-y-4">
                       {/* Air Quality Index */}
                       <div className="bg-muted p-4 rounded-lg">

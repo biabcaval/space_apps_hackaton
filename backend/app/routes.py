@@ -1,5 +1,11 @@
 from fastapi import APIRouter, Query
-from app.services import fetch_pollution_data, fetch_daily_forecast_data, search_location, fetch_weather_forecast
+from app.services import (
+    fetch_pollution_data, 
+    fetch_daily_forecast_data, 
+    search_location, 
+    fetch_weather_forecast,
+    fetch_tempo_gas_volume
+)
 
 router = APIRouter()
 
@@ -15,6 +21,7 @@ async def read_root():
             "daily_forecast": "/air-pollution/forecast-daily?lat={lat}&lon={lon}",
             "geocoding_search": "/geocoding/search?q={query}&limit={limit}",
             "weather_forecast": "/weather/forecast?lat={lat}&lon={lon}",
+            "tempo_gas_data": "/air-pollution/tempo?gas={gas}&lat={lat}&lon={lon}&start_date={YYYY-MM-DD}&end_date={YYYY-MM-DD}",
             "docs": "/docs"
         }
     }
@@ -70,3 +77,24 @@ async def get_weather_forecast(
     Returns hourly and daily weather forecasts including temperature, precipitation, wind, and humidity
     """
     return await fetch_weather_forecast(lat, lon)
+
+@router.get("/air-pollution/tempo")
+async def get_tempo_gas_data(
+    gas: str = Query(..., description="Gas type (NO2, HCHO, O3PROF, O3TOT)"),
+    lat: float = Query(..., description="Latitude coordinate"),
+    lon: float = Query(..., description="Longitude coordinate"),
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)", regex=r"^\d{4}-\d{2}-\d{2}$"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)", regex=r"^\d{4}-\d{2}-\d{2}$")
+):
+    """
+    Get NASA TEMPO satellite gas measurement data for a specific location
+    
+    Supported gases:
+    - NO2: Nitrogen Dioxide
+    - HCHO: Formaldehyde  
+    - O3PROF: Ozone Profile
+    - O3TOT: Total Ozone
+    
+    Returns tropospheric column density and estimated gas volume based on elevation
+    """
+    return await fetch_tempo_gas_volume(gas, lat, lon, start_date, end_date)

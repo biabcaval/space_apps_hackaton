@@ -8,3 +8,5 @@ retry-requests
 numpy 
 pandas
 python-dotenv
+earthaccess
+netCDF4

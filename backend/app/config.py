@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# API Configuration - Load multiple API keys from environment variables
-def load_api_keys():
-    """Load multiple API keys from environment variables with fallback support"""
+# API Configuration - Load OpenWeatherMap API keys
+def load_openweather_api_keys():
+    """Load multiple OpenWeatherMap API keys from environment variables with fallback support"""
     api_keys = []
     
     # Method 1: Load individual numbered keys
@@ -34,11 +34,18 @@ def load_api_keys():
     if not unique_keys:
         raise ValueError("No valid OPENWEATHER_API_KEY found in environment variables. Please check your .env file.")
     
-    print(f"Loaded {len(unique_keys)} API key(s) for fallback support")
+    print(f"Loaded {len(unique_keys)} OpenWeatherMap API key(s) for fallback support")
     return unique_keys
 
-# Load API keys with fallback support
-API_KEYS = load_api_keys()
+# Load OpenWeatherMap API keys with fallback support
+OPENWEATHER_API_KEYS = load_openweather_api_keys()
+
+# NASA Earthdata credentials (for TEMPO data)
+NASA_EARTHDATA_USERNAME = os.getenv("NASA_EARTHDATA_USERNAME")
+NASA_EARTHDATA_PASSWORD = os.getenv("NASA_EARTHDATA_PASSWORD")
+
+# Data directory for TEMPO downloads
+TEMPO_DATA_DIR = os.getenv("TEMPO_DATA_DIR", "data/")
 
 # CORS configuration
 ORIGINS = [

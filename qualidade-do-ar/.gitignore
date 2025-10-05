@@ -1,0 +1,7 @@
+.env
+*-lock.json
+node_modules/
+.wwebjs*
+data/
+screening.ipynb
+*.ipynb

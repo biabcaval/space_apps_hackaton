@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet CSS import for map styling */
+@import 'leaflet/dist/leaflet.css';
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 100% 97%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 209 92% 57%; /* Blue Yonder #2E96F5 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 209 100% 33%; /* Electric Blue #0042A6 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 15% 45%;
+
+    --accent: 225 92% 46%; /* Neon Blue #0960E1 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 15 100% 45%; /* Rocket Red #E43700 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 209 92% 57%; /* Blue Yonder */
+
+    --radius: 0.75rem;
+    
+    /* Air Quality Colors */
+    --air-good: 145 65% 50%;
+    --air-moderate: 45 95% 55%;
+    --air-unhealthy: 30 95% 55%;
+    --air-very-unhealthy: 10 85% 55%;
+    --air-hazardous: 0 85% 45%;
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(209 92% 57%) 0%, hsl(225 92% 46%) 50%, hsl(209 100% 33%) 100%);
+    --gradient-atmospheric: linear-gradient(180deg, hsl(220 50% 97%) 0%, hsl(220 30% 95%) 100%);
+    
+    /* Shadows */
+    --shadow-smooth: 0 4px 16px -2px hsl(209 92% 57% / 0.1);
+    --shadow-elevated: 0 8px 24px -4px hsl(209 92% 57% / 0.15);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 30% 8%;
+    --foreground: 195 20% 95%;
+
+    --card: 215 25% 12%;
+    --card-foreground: 195 20% 95%;
+
+    --popover: 215 25% 12%;
+    --popover-foreground: 195 20% 95%;
+
+    --primary: 209 92% 57%; /* Blue Yonder */
+    --primary-foreground: 220 80% 8%; /* Deep Blue */
+
+    --secondary: 209 100% 33%; /* Electric Blue */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 65%;
+
+    --accent: 225 92% 46%; /* Neon Blue */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 15 100% 45%; /* Rocket Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 209 92% 57%; /* Blue Yonder */
+    
+    --gradient-hero: linear-gradient(135deg, hsl(209 92% 35%) 0%, hsl(225 92% 35%) 50%, hsl(209 100% 25%) 100%);
+    --gradient-atmospheric: linear-gradient(180deg, hsl(220 80% 8%) 0%, hsl(220 60% 12%) 100%);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

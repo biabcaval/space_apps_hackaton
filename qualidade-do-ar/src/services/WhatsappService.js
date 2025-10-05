@@ -2,7 +2,7 @@ import wwebjs from "whatsapp-web.js";
 const { Client, LocalAuth } = wwebjs;
 import qrcode from "qrcode-terminal";
 import moment from "moment-timezone";
-import UserService from "./UserService";
+import UserService from "./UserService.js";
 
 class WhatsappService {
   constructor() {
@@ -14,6 +14,10 @@ class WhatsappService {
   }
 
   async initialize() {
+    if (this.client) {
+      return; // Já inicializado
+    }
+    
     // Inicializa o cliente com as mesmas configurações que funcionam em wweb.js
     this.client = new Client({
       authStrategy: new LocalAuth(),
@@ -57,16 +61,38 @@ class WhatsappService {
         const contact = await msg.getContact();
         const name = contact.name || contact.pushname || 'Usuário';
 
-        console.log(`Mensagem recebida de ${name} (${sender}): ${msg.body}`);
-
-        // Exemplo de resposta automática
-        if (msg.body.toLowerCase().includes('oi') || msg.body.toLowerCase().includes('olá')) {
-          const response = `Olá ${name}! Como posso ajudar você hoje?`;
-          await this.enqueueMessage(sender, response);
+        let user = await UserService.getUserByWhatsAppNumber(sender);
+        // if user not found, create a new one
+        if (!user) {
+          user = await UserService.createUser({
+            phoneNumber: sender,
+            name: name,
+            active: true,
+            notificationPreferences: {}
+          });
+          console.log(`Novo usuário criado: ${name} (${sender})`);
+        } else {
+          console.log(`Usuário existente: ${name} (${sender})`);
         }
+
+        console.log(`Mensagem recebida de ${name} (${sender}): ${msg.body}`);
 
         // Se for uma localização
         if (msg.type === 'location') {
+          // update user location
+          await UserService.updateUserLocation(user._id, {
+            latitude: msg.location.latitude,
+            longitude: msg.location.longitude
+          });
+
+          // update user date time to receive updates do in the next minute
+          await UserService.updateUserNotificationPreferences(user._id, {
+            frequency: 'realtime',
+            // right now + 1 minute
+            timeOfDay: moment().add(1, 'minute').format('HH:mm'),
+            timezone: 'America/Recife'
+          });
+
           const response = `Recebi sua localização (${msg.location.latitude}, ${msg.location.longitude}). 
             Em breve enviarei informações sobre a qualidade do ar.`;
           await this.enqueueMessage(sender, response);

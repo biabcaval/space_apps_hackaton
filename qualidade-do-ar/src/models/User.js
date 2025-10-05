@@ -19,14 +19,17 @@ const userSchema = new mongoose.Schema({
   notificationPreferences: {
     frequency: {
       type: String,
-      enum: ['daily', 'weekly'],
+      enum: ['daily', 'weekly', 'realtime'],
       default: 'daily'
     },
-    timeOfDay: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    timeOfDay: {
+      type: String,
+      default: '08:00'  // formato HH:mm
+    },
+    timezone: {
+      type: String,
+      default: 'America/Recife'
+    }
   }
 });
 

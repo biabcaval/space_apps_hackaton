@@ -23,6 +23,13 @@ app.use(express.json());
 app.use('/api', userRoutes);
 app.use('/api', notificationRoutes);
 
+app.get("/air-quality-tempo", checkApiToken, validateCoordinates, async (req, res) => {
+  const { lat, lon } = req.query;
+  
+ 
+});
+
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {

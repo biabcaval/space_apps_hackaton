@@ -4,3 +4,7 @@ __pycache__
 backend/.env
 .env
 .cache.sqlite
+backend/.cache.sqlite
+data/
+backend/data/
+.cache.sqlites

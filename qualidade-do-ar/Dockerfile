@@ -40,5 +40,10 @@ RUN npm install --omit=dev
 # Copie o restante dos arquivos
 COPY . .
 
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV CHROME_BIN=/usr/bin/chromium
+
+EXPOSE 3000
+
 # Comando para iniciar o aplicativo
 CMD ["npm", "start"]

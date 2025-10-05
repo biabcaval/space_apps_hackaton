@@ -10,3 +10,4 @@ pandas
 python-dotenv
 earthaccess
 netCDF4
+openai

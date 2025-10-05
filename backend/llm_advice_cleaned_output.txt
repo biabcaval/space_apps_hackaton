@@ -1,0 +1,100 @@
+• For kids with mild asthma, it's advisable to keep them home from school today due to increased risk of asthma attacks from NO2 levels at 85.3 μg/m³.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Respiratory Conditions
+================================================================================
+🤖 Generating LLM advice for People with Respiratory Conditions with AQI 3...
+✅ Successfully generated advice for People with Respiratory Conditions
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for People with Respiratory Conditions:
+--------------------------------------------------------------------------------
+• Start your day with a peak flow meter check to establish your baseline - with PM2.5 levels at 35.5 μg/m³, early detection of any airflow restriction is crucial.
+• Take your controller medication as prescribed, and consider using your rescue inhaler preventively if engaging in outdoor activities - especially with NO2 at 85.3 μg/m³ posing airway irritation risks.
+• Stay vigilant for early warning signs such as increased coughing or wheezing and have your emergency inhaler readily available at all times - particularly with O3 levels at 110.7 μg/m³ triggering potential asthma attacks.
+• Prioritize indoor activities today and avoid strenuous exercises outdoors to minimize exposure to pollutants like PM10 at 60.2 μg/m³, which can exacerbate respiratory symptoms.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Cardiovascular Conditions
+================================================================================
+🤖 Generating LLM advice for People with Cardiovascular Conditions with AQI 3...
+✅ Successfully generated advice for People with Cardiovascular Conditions
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for People with Cardiovascular Conditions:
+--------------------------------------------------------------------------------
+• Take your blood pressure medication as prescribed today, especially because PM2.5 levels are at 35.5 μg/m³, which can spike your blood pressure. Ensure you have your nitroglycerin tablets with you at all times in case of any chest pain or irregular heartbeats triggered by the pollution.
+• Monitor your blood pressure more frequently throughout the day due to the elevated PM10 levels at 60.2 μg/m³, which can exacerbate your cardiovascular condition. Check it at least 3 times today and keep a record to share with your healthcare provider.
+• Avoid any outdoor exertion, even walking, as NO2 levels are at 85.3 μg/m³, which can further strain your heart and lead to increased heart rate and blood pressure. Opt for indoor activities like stretching or light yoga instead.
+• If you experience any chest pain, shortness of breath, or unusual fatigue while indoors, seek immediate medical attention as PM2.5 particles at 35.5 μg/m³ can trigger irregular heartbeats and heart attacks in individuals with cardiovascular conditions.
+• Engage in stress-reducing activities such as deep breathing exercises or meditation to help counteract the impact of O3 levels at 110.7 μg/m³ on reduced lung function during exercise, which can be particularly concerning for individuals with cardiovascular issues.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Pregnant Women
+================================================================================
+🤖 Generating LLM advice for Pregnant Women with AQI 3...
+✅ Successfully generated advice for Pregnant Women
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Pregnant Women:
+--------------------------------------------------------------------------------
+• Monitor fetal movements closely today - aim for at least 10 kicks within 2 hours. Any reduction in movement signals potential oxygen deprivation due to CO exposure, which is particularly harmful to your baby's development.
+• Prioritize indoor exercises like prenatal yoga or light stretching, especially with PM2.5 levels at 35.5 μg/m³ posing risks of preterm birth and complications linked to outdoor air pollution. Limit outdoor activities to early morning or late evening when pollutants are lower.
+• Avoid areas near heavy traffic or construction sites where NO2 levels at 85.3 μg/m³ can irritate airways and potentially affect your baby's lung development. Opt for walks in parks or gardens away from major roadways to reduce exposure.
+• Stay vigilant for symptoms such as shortness of breath, dizziness, or persistent coughing that may indicate the air quality is impacting you or your baby adversely. With increased blood volume during pregnancy, any decrease in oxygen intake can strain your heart further.
+• Ensure you are taking your prenatal vitamins regularly, particularly those containing iron and folic acid to support your baby's growth amid pollutants like PM10 at 60.2 μg/m³ causing respiratory irritation and potential birth weight concerns.
+• Hydrate well throughout the day to help flush out toxins from pollutants like O3 at 110.7 μg/m³ (ground-level ozone), which can reduce lung function by 5-10% during exercise. Aim for at least 8-10 glasses of water daily to support both you and your baby's health during this time of increased vulnerability.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Outdoor Workers
+================================================================================
+🤖 Generating LLM advice for Outdoor Workers with AQI 3...
+✅ Successfully generated advice for Outdoor Workers
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Outdoor Workers:
+--------------------------------------------------------------------------------
+• Start your workday by ensuring you have your N95 mask fitted properly to protect against PM10 at 60.2 μg/m³, which can cause respiratory irritation during physical exertion.
+• Take a 15-minute break in a clean air space every 2 hours to reduce exposure to pollutants like NO2 at 85.3 μg/m³, known to inflame airways and impair lung function.
+• Demand your employer provide you with additional protective equipment, such as safety goggles, to shield your eyes from PM10 particles while working outdoors.
+• If you experience symptoms like coughing or shortness of breath while working in O3 levels of 110.7 μg/m³, immediately stop working and seek medical attention as it can reduce lung function during physical activity.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+SUMMARY - CHECKING FOR UNIQUENESS
+================================================================================
+
+Comparing advice for different groups to verify uniqueness...
+
+📊 Generated 6 pieces of advice
+📊 6 unique responses
+✅ SUCCESS: All advice is unique to each risk group!
+
+🔍 Checking for group-specific terminology:
+  ✅ Elderly (65+): Found keywords ['blood pressure', 'medication', 'heart', 'elderly']
+  ✅ Children: Found keywords ['school', 'parents', 'play', 'kids', 'child']
+  ✅ People with Respiratory Conditions: Found keywords ['inhaler', 'asthma', 'wheez']
+  ✅ People with Cardiovascular Conditions: Found keywords ['heart', 'chest pain', 'blood pressure']
+  ✅ Pregnant Women: Found keywords ['fetal', 'baby', 'prenatal', 'pregnancy']
+  ✅ Outdoor Workers: Found keywords ['mask', 'employer', 'work', 'break']
+
+================================================================================
+TEST COMPLETE
+================================================================================

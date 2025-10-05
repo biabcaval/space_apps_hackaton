@@ -1,0 +1,170 @@
+Loaded 3 OpenWeatherMap API key(s) for fallback support
+
+🧪 Starting LLM Advice Test...
+
+Note: This test requires OpenAI API key to be set in environment variables
+If API is not available, fallback advice will be used
+
+================================================================================
+TESTING LLM ADVICE GENERATION FOR DIFFERENT RISK GROUPS
+================================================================================
+
+Test Conditions:
+  AQI: 3 (Moderate)
+  PM2.5: 35.5 μg/m³
+  PM10: 60.2 μg/m³
+  NO2: 85.3 μg/m³
+  O3: 110.7 μg/m³
+
+================================================================================
+
+
+================================================================================
+GENERATING ADVICE FOR: Elderly (65+)
+================================================================================
+🤖 Generating LLM advice for Elderly (65+) with AQI 3...
+✅ Successfully generated advice for Elderly (65+)
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Elderly (65+):
+--------------------------------------------------------------------------------
+1. Elderly (65+): If you have both heart and lung issues, prioritize avoiding outdoor activities today due to the elevated levels of PM2.5 at 35.5 μg/m³, which can trigger heart attacks or strokes. Instead, engage in light indoor exercises like chair yoga to maintain mobility and reduce fall risks.
+
+2. Elderly (65+): Adjust your medication schedule by taking your blood pressure pills at least 30 minutes before any planned outdoor activities, given the moderate AQI with NO2 at 85.3 μg/m³ potentially increasing airway irritation in individuals like you. Keep your rescue inhaler accessible in case of any breathing difficulties.
+
+3. Elderly (65+): Monitor for specific symptoms such as chest tightness, palpitations, or unusual fatigue – indicators that you should call your doctor immediately considering the harmful effects of O3 at 110.7 μg/m³ on reducing lung function during exercise. Have a list of emergency contacts readily available.
+
+4. Elderly (65+): Instead of light gardening outdoors with PM10 levels at 60.2 μg/m³ causing respiratory irritation, consider indoor activities like potting plants or tending to houseplants. Ensure proper ventilation indoors by opening windows when air quality improves to prevent any buildup of indoor pollutants.
+
+5. Elderly (65+): Take extra precautions today and avoid unnecessary exertion when conducting daily tasks due to the higher risk of cardiovascular complications from air pollution, especially with O3 at 110.7 μg/m³ affecting lung function. Stay hydrated and rest after each activity to manage potential strain on your heart and lungs effectively.
+
+6. Elderly (65+): Set reminders to check your blood pressure multiple times throughout the day given the unhealthy levels of PM2.5 at 35.5 μg/m³, which can elevate blood pressure and heart rate in vulnerable groups like yours. Keep a record to share with your healthcare provider during your next visit for better monitoring and management of your cardiovascular health under these conditions.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Children
+================================================================================
+🤖 Generating LLM advice for Children with AQI 3...
+✅ Successfully generated advice for Children
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Children:
+--------------------------------------------------------------------------------
+- Parents: Consider indoor activities for children today due to elevated PM2.5 levels at 35.5 μg/m³, which can harm their developing lungs.
+  
+- Ensure children with mild asthma have their rescue inhaler with them during recess or sports practice today - NO2 levels at 85.3 μg/m³ can trigger breathing issues.
+
+- Watch for signs of wheezing or chest tightness in your child while playing outdoors - O3 at 110.7 μg/m³ can worsen respiratory symptoms during exercise.
+
+- Encourage kids to engage in indoor games or creative activities to limit exposure to PM10 particles (60.2 μg/m³) that may cause throat and eye irritation.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Respiratory Conditions
+================================================================================
+🤖 Generating LLM advice for People with Respiratory Conditions with AQI 3...
+✅ Successfully generated advice for People with Respiratory Conditions
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for People with Respiratory Conditions:
+--------------------------------------------------------------------------------
+- People with Respiratory Conditions: "Before going outside with PM2.5 levels at 35.5 μg/m³, pre-medicate with your emergency inhaler to prevent bronchoconstriction."
+- People with Respiratory Conditions: "If you experience wheezing or increased shortness of breath with NO2 at 85.3 μg/m³, adjust your controller medication dosage as per your physician's instructions."
+- People with Respiratory Conditions: "Monitor for early warning signs such as increased coughing or chest tightness when PM10 levels are elevated at 60.2 μg/m³, and take action according to your personalized asthma action plan."
+- People with Respiratory Conditions: "Avoid strenuous breathing exercises outdoors during O3 peaks at 110.7 μg/m³, which can trigger respiratory attacks - opt for indoor activities instead."
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Cardiovascular Conditions
+================================================================================
+🤖 Generating LLM advice for People with Cardiovascular Conditions with AQI 3...
+✅ Successfully generated advice for People with Cardiovascular Conditions
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for People with Cardiovascular Conditions:
+--------------------------------------------------------------------------------
+- People with Cardiovascular Conditions: Check your blood pressure twice today due to the elevated PM2.5 levels at 35.5 μg/m³, which can increase your blood pressure and heart rate. Aim to keep readings below 130/80 mmHg.
+
+- Take a break from outdoor physical exertion today with PM10 levels at 60.2 μg/m³ to avoid exacerbating any cardiovascular symptoms. Limit your exertion to light activities indoors, such as gentle stretching or short walks around your home.
+
+- Be vigilant for any chest pain or shortness of breath, as PM2.5 particles can trigger irregular heartbeats and heart attacks, especially with NO2 levels at 85.3 μg/m³. Seek immediate medical attention if you experience any of these symptoms.
+
+- Consider adjusting your heart medications based on your usual routine and activity level compared to today's air quality. Consult your healthcare provider before making any changes, especially with O3 levels at 110.7 μg/m³ impacting lung function during exercise.
+
+- Ensure you are equipped with your prescribed nitroglycerin tablets and have emergency contacts readily available in case of any cardiovascular emergencies, given the current air quality conditions that may further strain your heart.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Pregnant Women
+================================================================================
+🤖 Generating LLM advice for Pregnant Women with AQI 3...
+✅ Successfully generated advice for Pregnant Women
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Pregnant Women:
+--------------------------------------------------------------------------------
+- Monitor fetal movements closely today, aiming for at least 10 kicks in 2 hours to ensure your baby is getting enough oxygen. With PM2.5 levels at 35.5 μg/m³, reduced oxygen intake can impact fetal development and birth weight.
+  
+- Prioritize indoor prenatal exercises today to minimize CO exposure and protect your baby's oxygen supply. The increased blood volume during pregnancy already strains your heart - PM10 levels at 60.2 μg/m³ can add further stress.
+
+- Avoid outdoor walks in areas with high traffic or industrial emissions like NO2 at 85.3 μg/m³ to limit exposure risks during pregnancy. If you choose to walk, do so when pollution levels are lower, and wear a mask rated for PM2.5 protection.
+
+- Stay alert for symptoms like dizziness, shortness of breath, or unusual fatigue as indicators that pollution may be affecting you or your baby due to elevated O3 levels at 110.7 μg/m³. If you experience any concerning symptoms, contact your healthcare provider immediately for guidance on next steps.
+
+- Ensure your indoor air quality is optimal by using HEPA filters and avoiding activities that generate indoor pollution (like smoking or burning candles). With the current air quality conditions, being proactive about environmental factors is crucial for protecting both maternal and fetal health during pregnancy.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Outdoor Workers
+================================================================================
+🤖 Generating LLM advice for Outdoor Workers with AQI 3...
+✅ Successfully generated advice for Outdoor Workers
+
+✅ Success!
+Source: OpenAI GPT-3.5
+
+Advice for Outdoor Workers:
+--------------------------------------------------------------------------------
+- Outdoor Workers: "Request to work indoors if possible when PM2.5 levels are at 35.5 μg/m³ to reduce inhalation of microscopic particles that can trigger asthma attacks for respiratory patients, and increase blood pressure for cardiovascular patients."
+- Outdoor Workers: "Demand N95 masks from your employer when PM10 reaches 60.2 μg/m³ to protect against larger inhalable particles that irritate airways, especially during physical exertion like construction or landscaping work."
+- Outdoor Workers: "Take a 15-minute break every 2 hours in clean air spaces (AQI < 100) to minimize exposure to NO2 at 85.3 μg/m³, which can inflame airways and impair lung function."
+- Outdoor Workers: "If you feel the air is too dangerous to work in due to O3 levels at 110.7 μg/m³, know your OSHA rights for protective equipment and breaks; prioritize your health over work demands."
+--------------------------------------------------------------------------------
+
+
+================================================================================
+SUMMARY - CHECKING FOR UNIQUENESS
+================================================================================
+
+Comparing advice for different groups to verify uniqueness...
+
+📊 Generated 6 pieces of advice
+📊 6 unique responses
+✅ SUCCESS: All advice is unique to each risk group!
+
+🔍 Checking for group-specific terminology:
+  ✅ Elderly (65+): Found keywords ['blood pressure', 'medication', 'heart', 'elderly']
+  ✅ Children: Found keywords ['parents', 'play', 'kids', 'child']
+  ✅ People with Respiratory Conditions: Found keywords ['inhaler', 'asthma', 'breathing', 'wheez']
+  ✅ People with Cardiovascular Conditions: Found keywords ['heart', 'chest pain', 'blood pressure']
+  ✅ Pregnant Women: Found keywords ['fetal', 'baby', 'prenatal', 'pregnancy']
+  ✅ Outdoor Workers: Found keywords ['mask', 'employer', 'work', 'break']
+
+================================================================================
+TEST COMPLETE
+================================================================================

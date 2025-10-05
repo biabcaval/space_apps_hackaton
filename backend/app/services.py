@@ -898,3 +898,584 @@ async def fetch_daymet_climate_summary(
             status_code=500,
             detail=f"Error fetching climate summary: {str(e)}"
         )
+
+
+# ============================================================================
+# LLM Advice Generation Functions
+# ============================================================================
+
+def build_air_state_description(aqi: int, aqi_level: str, pollutants: Optional[Dict[str, float]]) -> str:
+    """
+    Build detailed description of current air quality state with health impact context
+    """
+    description = f"═══ AIR QUALITY INDEX (AQI): {aqi} - {aqi_level} ═══\n"
+    
+    # AQI impact description with health context
+    aqi_impacts = {
+        1: "GOOD (1): Air is clean. Safe for all outdoor activities. No health precautions needed.",
+        2: "FAIR (2): Air quality acceptable. Unusually sensitive individuals may experience minor symptoms. Most people unaffected.",
+        3: "MODERATE (3): Sensitive groups (elderly, children, respiratory/cardiac patients) will experience effects. Healthy adults typically unaffected.",
+        4: "POOR (4): UNHEALTHY - Everyone begins experiencing effects. Sensitive groups face serious health impacts. Limit prolonged outdoor exposure.",
+        5: "VERY POOR (5): HAZARDOUS - Health emergency. Entire population affected. Avoid all outdoor activities."
+    }
+    description += f"{aqi_impacts.get(aqi, 'Air quality status uncertain.')}\n"
+    
+    # Detailed pollutant information with specific health impacts
+    if pollutants:
+        description += "\n═══ DETAILED POLLUTANT ANALYSIS ═══\n"
+        
+        if pollutants.get('pm2_5'):
+            pm25 = pollutants['pm2_5']
+            description += f"\n🔴 PM2.5: {pm25:.1f} μg/m³\n"
+            description += "   - Microscopic particles that bypass nose/throat and lodge deep in lungs and bloodstream\n"
+            description += "   - Major concern for: Respiratory patients (triggers asthma attacks), cardiovascular patients (increases blood pressure & heart rate)\n"
+            if pm25 <= 12:
+                description += "   - STATUS: SAFE - Below WHO guideline\n"
+            elif pm25 <= 35:
+                description += "   - STATUS: MODERATE - Sensitive groups should reduce prolonged outdoor exertion\n"
+            elif pm25 <= 55:
+                description += "   - STATUS: UNHEALTHY FOR SENSITIVE GROUPS - Elderly, children, respiratory/cardiac patients: stay indoors\n"
+            else:
+                description += "   - STATUS: UNHEALTHY FOR ALL - Everyone should minimize outdoor exposure\n"
+        
+        if pollutants.get('pm10'):
+            pm10 = pollutants['pm10']
+            description += f"\n🟠 PM10: {pm10:.1f} μg/m³\n"
+            description += "   - Larger inhalable particles that irritate eyes, nose, throat, and airways\n"
+            description += "   - Major concern for: Respiratory patients (causes coughing, wheezing), outdoor workers\n"
+            if pm10 <= 50:
+                description += "   - STATUS: ACCEPTABLE\n"
+            else:
+                description += "   - STATUS: ELEVATED - Increased respiratory irritation, especially with exertion\n"
+        
+        if pollutants.get('no2'):
+            no2 = pollutants['no2']
+            description += f"\n🟡 NO2: {no2:.1f} μg/m³\n"
+            description += "   - Nitrogen dioxide from vehicle exhaust and industrial emissions\n"
+            description += "   - Major concern for: Asthma sufferers (inflames airways), children (impairs lung development)\n"
+            if no2 <= 40:
+                description += "   - STATUS: LOW RISK\n"
+            elif no2 <= 100:
+                description += "   - STATUS: MODERATE - Sensitive individuals may notice airway irritation\n"
+            else:
+                description += "   - STATUS: HIGH - Significant airway inflammation risk, especially near traffic\n"
+        
+        if pollutants.get('o3'):
+            o3 = pollutants['o3']
+            description += f"\n🔵 O3: {o3:.1f} μg/m³\n"
+            description += "   - Ground-level ozone (smog) - peaks in afternoon heat, worse on sunny days\n"
+            description += "   - Major concern for: Athletes (reduces lung function), respiratory patients (triggers attacks), outdoor workers\n"
+            if o3 <= 100:
+                description += "   - STATUS: ACCEPTABLE\n"
+            elif o3 <= 160:
+                description += "   - STATUS: MODERATE - Reduces lung function by 5-10% during exercise\n"
+            else:
+                description += "   - STATUS: UNHEALTHY - Can cause chest pain, coughing, throat irritation even at rest\n"
+    else:
+        description += "\n(Specific pollutant data not available - using AQI only)\n"
+    
+    return description
+
+
+def get_group_specific_questions(risk_group: str, aqi_level: str) -> str:
+    """
+    Get specific questions/concerns to address for each risk group
+    """
+    questions_map = {
+        "General Population": f"""
+1. What outdoor activities are safe today with {aqi_level} air quality?
+2. Should I adjust my exercise routine or workout schedule?
+3. Do I need to keep windows closed or can I air out my home?
+4. What symptoms should I watch for that mean I should go indoors?
+""",
+        
+        "Elderly (65+)": f"""
+1. Is it safe for me to take my usual daily walk with {aqi_level} air?
+2. Should I adjust my medication schedule or dosages today?
+3. What specific symptoms should prompt me to call my doctor?
+4. If I have both heart and lung issues, what's most important to avoid?
+5. Can I do light gardening or should I stay inside?
+""",
+        
+        "Children": f"""
+1. Should my children play outside at recess or during sports practice today?
+2. What symptoms in my child mean they should stop playing immediately?
+3. Are indoor vs outdoor sports equally risky in {aqi_level} air?
+4. If my child has mild asthma, should I keep them home from school?
+5. How do I explain to my kids why they can't play outside today?
+""",
+        
+        "People with Respiratory Conditions": f"""
+1. Should I use my rescue inhaler preventively before going outside?
+2. Do I need to adjust my controller medication dosage for {aqi_level} air?
+3. What early warning signs mean my condition is being affected?
+4. Is it safe to do breathing exercises or should I avoid them?
+5. Should I cancel my doctor appointment if it means going outside?
+6. When should I go to the emergency room vs. just use my inhaler?
+""",
+        
+        "People with Cardiovascular Conditions": f"""
+1. Will this air quality trigger a heart attack or stroke in vulnerable people?
+2. Should I check my blood pressure more frequently today?
+3. What chest symptoms require immediate emergency care vs. monitoring?
+4. Can I take my usual walk or is any exertion dangerous in {aqi_level} air?
+5. Should I adjust my blood pressure or heart medications today?
+""",
+        
+        "Pregnant Women": f"""
+1. How does {aqi_level} air quality affect my developing baby?
+2. Is it safe to continue my prenatal exercise routine today?
+3. Should I avoid certain activities or areas (like traffic) more than usual?
+4. What symptoms might indicate the air is affecting me or my baby?
+5. Are there any supplements or precautions specific to pregnancy I should take?
+6. Can I still take walks or should I stay completely indoors?
+""",
+        
+        "Outdoor Workers": f"""
+1. Should I request to work indoors today or is outdoor work manageable?
+2. What protective equipment (masks, etc.) should I demand from my employer?
+3. How often should I take breaks in clean air during my shift?
+4. What are my rights if I feel the air is too dangerous to work in?
+5. Should I modify my work pace or technique to breathe less heavily?
+6. What symptoms mean I should stop working immediately?
+""",
+        
+        "Athletes": f"""
+1. Should I cancel my training session or race scheduled for today?
+2. Can I train indoors instead, or should I take a complete rest day?
+3. How much should I reduce my training intensity in {aqi_level} air?
+4. Will training in this air cause permanent lung damage?
+5. What performance impacts should I expect if I train anyway?
+6. Are certain types of training (intervals vs. steady) safer than others?
+"""
+    }
+    
+    return questions_map.get(risk_group, questions_map["General Population"])
+
+
+def get_risk_group_context(risk_group: str) -> str:
+    """
+    Get specific health context and vulnerabilities for each risk group
+    """
+    contexts = {
+        "General Population": """
+- Healthy adults with no pre-existing conditions
+- Baseline respiratory and cardiovascular function
+- Can tolerate moderate air pollution with minimal effects
+- Should still avoid prolonged exposure during poor air quality
+        """,
+        
+        "Elderly (65+)": """
+- Reduced lung capacity and weakened immune systems
+- Higher risk of cardiovascular complications from air pollution
+- May have multiple chronic conditions (diabetes, hypertension)
+- Slower recovery from respiratory irritation
+- PM2.5 and ozone particularly dangerous - can trigger heart attacks or strokes
+- Need more time indoors during poor air quality
+        """,
+        
+        "Children": """
+- Developing lungs and respiratory systems still growing
+- Breathe more rapidly, inhaling more pollutants per body weight
+- Spend more time outdoors playing and being active
+- Higher risk of developing asthma from repeated exposure
+- More vulnerable to PM2.5, ozone, and NO2
+- Need parental supervision to limit exposure during poor air quality
+        """,
+        
+        "People with Respiratory Conditions": """
+- Asthma, COPD, chronic bronchitis, or emphysema
+- Airways already inflamed and hypersensitive
+- Pollution triggers bronchoconstriction and attacks
+- Emergency inhaler must be always accessible
+- PM2.5, ozone, and NO2 are major triggers
+- May need to adjust medication during poor air quality days
+- Should have action plan for worsening symptoms
+        """,
+        
+        "People with Cardiovascular Conditions": """
+- Heart disease, arrhythmias, history of heart attack or stroke
+- Air pollution increases blood pressure and heart rate
+- PM2.5 can trigger irregular heartbeats and heart attacks
+- Reduced exercise tolerance during pollution episodes
+- May need to avoid any physical exertion outdoors
+- Should monitor blood pressure more frequently
+- Chest pain or shortness of breath requires immediate medical attention
+        """,
+        
+        "Pregnant Women": """
+- Protecting both maternal and fetal health
+- Pollution can affect fetal development and birth weight
+- Increased blood volume makes heart work harder
+- CO exposure particularly dangerous - reduces oxygen to baby
+- PM2.5 linked to preterm birth and complications
+- Should prioritize indoor activities with good air quality
+- Need to balance exercise needs with air quality safety
+        """,
+        
+        "Outdoor Workers": """
+- Extended exposure times (8+ hours daily)
+- Physical exertion increases inhalation of pollutants
+- May not have option to work indoors
+- Construction, landscaping, delivery workers at highest risk
+- Need employer support for protective equipment
+- Should take frequent breaks in clean air spaces
+- May need schedule adjustments during severe pollution episodes
+        """,
+        
+        "Athletes": """
+- High breathing rates during training (10-20x normal)
+- Inhale much larger volumes of polluted air
+- Ozone causes airway inflammation reducing performance
+- Indoor training options should be utilized
+- Morning workouts better (before ozone peaks)
+- Performance suffers even in moderate air quality
+- Need to balance training goals with long-term lung health
+        """
+    }
+    
+    # Return specific context or general one
+    return contexts.get(risk_group, contexts["General Population"])
+
+
+def post_process_llm_advice(advice: str, risk_group: str) -> str:
+    """
+    Post-process LLM-generated advice to make it more user-friendly and natural.
+    Removes repetitive patterns, excessive quotes, and AI-like formatting.
+    """
+    import re
+    
+    # Remove repetitive risk group name from the start of bullet points
+    # e.g., "- People with Respiratory Conditions: Use your inhaler" -> "- Use your inhaler"
+    patterns_to_remove = [
+        rf'^[-•]\s*{re.escape(risk_group)}:\s*',
+        rf'^[-•]\s*{re.escape(risk_group)}\s*[-:]\s*',
+        rf'^\d+\.\s*{re.escape(risk_group)}:\s*',
+        rf'^\d+\.\s*{re.escape(risk_group)}\s*[-:]\s*',
+    ]
+    
+    lines = advice.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        cleaned_line = line
+        
+        # Remove risk group prefix from bullets
+        for pattern in patterns_to_remove:
+            cleaned_line = re.sub(pattern, '• ', cleaned_line, flags=re.IGNORECASE)
+        
+        # Remove excessive quotes around sentences
+        cleaned_line = re.sub(r'^[-•]\s*"(.+)"$', r'• \1', cleaned_line)
+        cleaned_line = re.sub(r'^\d+\.\s*"(.+)"$', r'• \1', cleaned_line)
+        
+        # Normalize bullet points (use • consistently)
+        cleaned_line = re.sub(r'^[-*]\s+', '• ', cleaned_line)
+        cleaned_line = re.sub(r'^\d+\.\s+', '• ', cleaned_line)
+        
+        # Remove empty bullet points
+        if cleaned_line.strip() in ['•', '-', '*', '']:
+            continue
+            
+        cleaned_lines.append(cleaned_line)
+    
+    # Join lines and clean up multiple blank lines
+    result = '\n'.join(cleaned_lines)
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    
+    # Remove AI-like meta phrases at the start of sentences
+    ai_phrases = [
+        r'^As an? AI,?\s*',
+        r'^I apologize,?\s*',
+        r'^Here (are|is) (some|the)\s+',
+        r'^Based on (the|this) (information|data),?\s*',
+        r'^Remember:?\s*',
+        r'^Please note:?\s*',
+        r'^Note:?\s*',
+    ]
+    
+    for phrase in ai_phrases:
+        result = re.sub(phrase, '', result, flags=re.IGNORECASE | re.MULTILINE)
+    
+    # Clean up spacing
+    result = re.sub(r'  +', ' ', result)  # Multiple spaces to single
+    result = re.sub(r'•\s+', '• ', result)  # Normalize bullet spacing
+    result = '\n'.join(line.strip() for line in result.split('\n') if line.strip())  # Remove empty lines
+    
+    return result.strip()
+
+
+async def generate_health_advice(
+    aqi: int,
+    risk_group: str,
+    pollutants: Dict[str, float] = None
+) -> Dict[str, Any]:
+    """
+    Generate personalized health advice for a specific risk group based on air quality
+    
+    Parameters:
+    aqi: Air Quality Index (1-5)
+    risk_group: Name of the risk group (e.g., "General Population", "Elderly", etc.)
+    pollutants: Dictionary of pollutant concentrations (optional)
+    
+    Returns:
+    Dictionary with generated advice
+    """
+    try:
+        from openai import OpenAI
+        import os
+        
+        # Get OpenAI API key from environment
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            # Return fallback advice if no API key
+            return {
+                "success": True,
+                "risk_group": risk_group,
+                "advice": get_fallback_advice(aqi, risk_group),
+                "source": "Fallback (No API Key)"
+            }
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Map AQI to quality level
+        aqi_levels = {
+            1: "Good",
+            2: "Fair",
+            3: "Moderate",
+            4: "Poor",
+            5: "Very Poor"
+        }
+        aqi_level = aqi_levels.get(aqi, "Unknown")
+        
+        # Build pollutants summary if provided
+        pollutants_text = ""
+        if pollutants:
+            pollutants_text = "\n\nCurrent pollutant levels:"
+            if pollutants.get('pm2_5'):
+                pollutants_text += f"\n- PM2.5: {pollutants['pm2_5']} μg/m³"
+            if pollutants.get('pm10'):
+                pollutants_text += f"\n- PM10: {pollutants['pm10']} μg/m³"
+            if pollutants.get('no2'):
+                pollutants_text += f"\n- NO2: {pollutants['no2']} μg/m³"
+            if pollutants.get('o3'):
+                pollutants_text += f"\n- O3: {pollutants['o3']} μg/m³"
+        
+        # Create risk-group-specific prompt context
+        group_context = get_risk_group_context(risk_group)
+        group_specific_questions = get_group_specific_questions(risk_group, aqi_level)
+        
+        # Build detailed air quality state description
+        air_state_description = build_air_state_description(aqi, aqi_level, pollutants)
+        
+        # Create prompt for the LLM with STRONG emphasis on uniqueness
+        prompt = f"""You are generating health advice for {risk_group} ONLY. This advice MUST be completely different from advice for other groups.
+
+═══════════════════════════════════════════════════
+CURRENT AIR QUALITY DATA:
+═══════════════════════════════════════════════════
+{air_state_description}
+
+═══════════════════════════════════════════════════
+SPECIFIC VULNERABILITIES OF {risk_group}:
+═══════════════════════════════════════════════════
+{group_context}
+
+═══════════════════════════════════════════════════
+KEY QUESTIONS THIS GROUP IS ASKING YOU:
+═══════════════════════════════════════════════════
+{group_specific_questions}
+
+═══════════════════════════════════════════════════
+YOUR TASK - GENERATE UNIQUE ADVICE FOR THIS GROUP:
+═══════════════════════════════════════════════════
+
+Write 4-6 HIGHLY SPECIFIC recommendations that ONLY make sense for {risk_group}.
+
+Each bullet point MUST:
+1. Reference SPECIFIC health equipment, medications, or activities unique to this group
+2. Address the EXACT pollutants that affect this group most (from the data above)
+3. Include ACTIONABLE steps with numbers, times, or measurements
+4. Use language and terminology specific to this group's lifestyle
+
+MANDATORY GROUP-SPECIFIC ELEMENTS TO INCLUDE:
+- For Elderly: Mention specific medications (blood pressure pills, heart meds), risk of falls, confusion, emergency contacts, blood pressure monitoring
+- For Children: Mention school activities, recess, sports practice, parents watching for symptoms, growth concerns, keeping them engaged indoors
+- For Respiratory: Mention rescue inhalers, nebulizers, peak flow meters, action plans, specific breathing symptoms (wheezing, shortness of breath)
+- For Cardiovascular: Mention chest pain, palpitations, blood pressure checks, exertion limits, stress management, emergency warning signs
+- For Pregnant: Mention fetal movement monitoring, prenatal vitamins, reduced oxygen to baby, prenatal exercises, avoiding certain positions
+- For Outdoor Workers: Mention N95 masks, employer OSHA requirements, work breaks, hydration, workers compensation, pay protection
+- For Athletes: Mention training zones, heart rate monitoring, workout modifications, performance impacts, recovery time
+
+❌ NEVER USE THESE GENERIC PHRASES:
+- "Stay indoors"
+- "Limit outdoor activities"  
+- "Monitor your health"
+- "Consult your doctor"
+- "Reduce exposure"
+- "Be careful"
+
+✅ INSTEAD USE GROUP-SPECIFIC INSTRUCTIONS LIKE:
+- Elderly: "Take your blood pressure medication 30 minutes before going outside, and keep your emergency contact list in your pocket"
+- Children: "Parents should watch for coughing during sleep tonight - PM2.5 at {pollutants.get('pm2_5', 'N/A')} μg/m³ can irritate developing lungs"
+- Respiratory: "Use your rescue inhaler prophylactically BEFORE symptoms start - with O3 at {pollutants.get('o3', 'N/A')} μg/m³, waiting is dangerous"
+- Cardiovascular: "Check your pulse before and after any stairs or walking - PM2.5 at {pollutants.get('pm2_5', 'N/A')} μg/m³ increases heart strain by 15-20%"
+
+CRITICAL: Each sentence should make it OBVIOUS which group this is for. Someone reading this should immediately know "{risk_group}" without being told."""
+
+        print(f"🤖 Generating LLM advice for {risk_group} with AQI {aqi}...")
+        
+        # Create group-specific system message with examples
+        system_message = f"""You are a specialist medical advisor who EXCLUSIVELY works with {risk_group}.
+
+CONTEXT: You are being asked to generate advice specifically for {risk_group}. Other specialists are generating DIFFERENT advice for OTHER groups. Your advice MUST be UNIQUE to {risk_group}.
+
+YOUR SPECIALIZATION:
+- You understand how air pollution uniquely affects {risk_group} in ways different from other groups
+- You know their specific medications, equipment, daily routines, and vulnerabilities
+- You provide recommendations that would be irrelevant, inappropriate, or even harmful for other groups
+
+EXAMPLES OF GROUP-SPECIFIC ADVICE:
+- Elderly (65+): "Check your blood pressure 2-3 times today since PM2.5 can spike it. Keep your nitroglycerin tablets handy if you have heart issues."
+- Children: "Parents: Watch your kids for coughing fits tonight. Keep them engaged with indoor games - try board games or video calls with friends."
+- Respiratory Patients: "Test your peak flow meter now (before symptoms). If below 80% of your personal best, use your rescue inhaler immediately."
+- Cardiovascular Patients: "Monitor for chest tightness or unusual fatigue. Take your stairs breaks - go one floor, rest 5 minutes, continue."
+- Pregnant Women: "Count fetal movements - you should feel 10 kicks in 2 hours. If fewer, call your OB immediately as reduced oxygen affects the baby."
+- Outdoor Workers: "You have OSHA rights to N95 masks and 15-min breaks every 2 hours. Your employer must provide these during AQI > 100."
+
+YOUR WRITING MUST:
+1. Reference SPECIFIC tools/medications this group uses (inhalers, blood pressure cuffs, heart rate monitors, etc.)
+2. Cite the EXACT pollutant levels from the data and explain why they matter to THIS group
+3. Give PRECISE instructions with numbers (how many times, how long, what threshold)
+4. Use terminology and language unique to this group's daily life
+
+THE TEST: If I removed the group name from your advice, a reader should STILL be able to identify which group it's for based on the content alone."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,  # Increased for more detailed, group-specific responses
+            temperature=0.9,  # Higher temperature for maximum variation between groups
+            presence_penalty=0.6,  # Encourage diverse content
+            frequency_penalty=0.3  # Reduce repetition across different group responses
+        )
+        
+        advice_text = response.choices[0].message.content.strip()
+        
+        # Post-process to make it more user-friendly and less AI-like
+        advice_text = post_process_llm_advice(advice_text, risk_group)
+        
+        print(f"✅ Successfully generated advice for {risk_group}")
+        
+        return {
+            "success": True,
+            "risk_group": risk_group,
+            "aqi": aqi,
+            "aqi_level": aqi_level,
+            "advice": advice_text,
+            "source": "OpenAI GPT-3.5"
+        }
+        
+    except ImportError:
+        print("⚠️  OpenAI library not installed")
+        return {
+            "success": True,
+            "risk_group": risk_group,
+            "advice": get_fallback_advice(aqi, risk_group),
+            "source": "Fallback (Library Not Installed)"
+        }
+    except Exception as e:
+        print(f"❌ Error generating LLM advice: {str(e)}")
+        # Return fallback advice on error
+        return {
+            "success": True,
+            "risk_group": risk_group,
+            "advice": get_fallback_advice(aqi, risk_group),
+            "source": f"Fallback (Error: {str(e)[:50]})"
+        }
+
+
+def get_fallback_advice(aqi: int, risk_group: str) -> str:
+    """
+    Provide fallback advice when LLM is not available
+    Tailored to specific risk groups
+    """
+    
+    # Get base advice for AQI level
+    base_advice = {
+        1: "Air quality is excellent today",
+        2: "Air quality is acceptable",
+        3: "Air quality is moderate - sensitive groups should take precautions",
+        4: "Air quality is poor - health effects possible for everyone",
+        5: "Air quality is very poor - health alert conditions"
+    }
+    
+    # Group-specific advice by AQI level
+    group_advice = {
+        "General Population": {
+            1: "• Perfect day for all outdoor activities!\n• No restrictions needed\n• Enjoy time outside",
+            2: "• Safe for outdoor activities\n• If unusually sensitive, monitor how you feel\n• Generally no concerns",
+            3: "• Continue normal activities with awareness\n• Reduce prolonged intense outdoor exercise\n• Watch for any unusual symptoms",
+            4: "• Limit prolonged outdoor exertion\n• Choose less strenuous activities\n• Keep windows closed\n• Consider N95 mask for extended time outside",
+            5: "• Avoid outdoor activities\n• Stay indoors\n• Use air purifiers if available\n• Wear N95 mask if you must go outside"
+        },
+        "Elderly (65+)": {
+            1: "• Great day for walks and gentle outdoor activities!\n• Ensure medications are up to date",
+            2: "• Safe for usual activities\n• Keep rescue medications accessible\n• Stay hydrated",
+            3: "• Limit time outdoors, especially during afternoon\n• Avoid heavy traffic areas\n• Monitor for shortness of breath or fatigue",
+            4: "• Stay indoors as much as possible\n• Wear N95 mask if you must go out\n• Avoid any strenuous activity\n• Contact doctor if breathing difficulties arise",
+            5: "• Do not go outside\n• Keep all medications readily available\n• Use air purifiers\n• Seek immediate medical help if experiencing chest pain or severe shortness of breath"
+        },
+        "Children": {
+            1: "• Perfect for outdoor play and sports!\n• Run, play, and have fun outside\n• Stay hydrated",
+            2: "• Safe for all activities\n• Parents: watch for coughing during intense play\n• Take water breaks",
+            3: "• Reduce prolonged outdoor play time\n• Consider indoor activities during afternoon\n• Parents: monitor for coughing or wheezing",
+            4: "• Move activities indoors\n• Avoid outdoor sports and recess if possible\n• Watch for breathing difficulties\n• Keep windows closed at school and home",
+            5: "• No outdoor activities\n• Stay indoors with windows closed\n• Avoid physical exertion even indoors\n• Parents: seek medical care if child has difficulty breathing"
+        },
+        "People with Respiratory Conditions": {
+            1: "• Enjoy outdoor activities with normal precautions\n• Medications should be accessible but not likely needed",
+            2: "• Generally safe, but keep rescue inhaler nearby\n• Limit intense exercise to morning hours\n• Watch for early warning signs",
+            3: "• Reduce outdoor time significantly\n• Keep rescue inhaler always accessible\n• Avoid areas with heavy traffic\n• May need to increase controller medication - consult doctor",
+            4: "• Stay indoors\n• Follow your asthma action plan\n• Use rescue inhaler as prescribed\n• Wear N95 mask if you must go outside\n• Contact doctor if symptoms worsen",
+            5: "• Emergency precautions - do not go outside\n• Follow emergency asthma action plan\n• Keep rescue medications at hand\n• Go to ER if using rescue inhaler more than every 4 hours"
+        },
+        "People with Cardiovascular Conditions": {
+            1: "• Safe for light to moderate exercise\n• Enjoy outdoor activities\n• Continue medications as prescribed",
+            2: "• Generally safe\n• Avoid intense exertion\n• Monitor heart rate and blood pressure",
+            3: "• Limit outdoor activities\n• No strenuous exercise outdoors\n• Monitor blood pressure more frequently\n• Watch for chest discomfort or irregular heartbeat",
+            4: "• Stay indoors and rest\n• Avoid all physical exertion\n• Take medications as prescribed\n• Call doctor if experiencing chest pain, shortness of breath, or palpitations",
+            5: "• Do not go outside\n• Complete rest indoors\n• Keep medications accessible\n• Seek immediate medical attention for any chest pain, severe shortness of breath, or dizziness"
+        },
+        "Pregnant Women": {
+            1: "• Safe for normal pregnancy activities and exercise\n• Enjoy time outdoors\n• Stay hydrated",
+            2: "• Continue usual activities\n• Limit intense exercise to morning\n• Stay in well-ventilated areas",
+            3: "• Reduce outdoor time\n• Avoid traffic congestion areas (CO exposure)\n• Move exercise indoors\n• Ensure good indoor air quality",
+            4: "• Minimize outdoor exposure\n• Stay indoors with good air quality\n• No outdoor exercise\n• Wear N95 mask if you must go outside",
+            5: "• Do not go outside\n• Stay indoors with air purifier if possible\n• Complete rest\n• Contact doctor if experiencing any discomfort or reduced fetal movement"
+        },
+        "Outdoor Workers": {
+            1: "• Work safely with normal precautions\n• Stay hydrated\n• Take regular breaks",
+            2: "• Continue work with awareness\n• Take breaks in shaded areas\n• Monitor how you feel",
+            3: "• Request reduced work hours if possible\n• Take frequent breaks indoors\n• Wear N95 mask during heavy exertion\n• Stay very hydrated",
+            4: "• Wear N95 mask throughout shift\n• Request indoor duties if possible\n• Take frequent breaks in clean air\n• Employer should provide protective equipment",
+            5: "• Request day off or indoor assignment\n• If must work: wear N95 mask, take breaks every 30 min\n• Employer required to provide protection\n• Know your right to refuse unsafe work"
+        },
+        "Athletes": {
+            1: "• Perfect conditions for training!\n• No restrictions on outdoor workouts\n• Perform at your best",
+            2: "• Train normally but consider morning hours\n• Monitor performance for any decline\n• Stay hydrated",
+            3: "• Reduce training intensity by 20-30%\n• Move workouts indoors if possible\n• Avoid afternoon training (peak ozone)\n• Performance will be impacted",
+            4: "• Move all training indoors\n• Or reduce outdoor intensity by 50%+\n• No interval training or races outdoors\n• Your lungs need protection",
+            5: "• 100% indoor training only\n• Or take rest day\n• Do not train outdoors - serious health risk\n• Even elite athletes should not train in these conditions"
+        }
+    }
+    
+    # Get specific advice or use default
+    advice = group_advice.get(risk_group, group_advice["General Population"]).get(
+        aqi, 
+        "Monitor air quality and adjust activities accordingly"
+    )
+    
+    return f"{base_advice.get(aqi, 'Air quality information')}\n\n{advice}"

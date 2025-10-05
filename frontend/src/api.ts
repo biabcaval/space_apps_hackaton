@@ -10,7 +10,8 @@ interface ApiResponse<T = any> {
 class Api {
   private primaryApi: AxiosInstance;
   private fallbackApi: AxiosInstance;
-  private readonly TIMEOUT = 5000; // 5 segundos
+  private readonly TIMEOUT = 5000; // 5 seconds
+  private readonly LONG_TIMEOUT = 80000; // 60 seconds for heavy operations (TEMPO, Daymet)
 
   constructor() {
     // Configuração da API primária (ngrok)
@@ -46,16 +47,20 @@ class Api {
     api: AxiosInstance, 
     method: 'get' | 'post',
     endpoint: string,
-    data?: any
+    data?: any,
+    customTimeout?: number
   ): Promise<T> {
     try {
       const startTime = Date.now();
-      const queryParams = method === 'get' ? this.buildQueryString(data) : '';
+      // Build query string for both GET and POST (some POST endpoints use query params)
+      const queryParams = this.buildQueryString(data);
       const fullUrl = `${endpoint}${queryParams}`;
       
+      const config = customTimeout ? { timeout: customTimeout } : {};
+      
       const response = method === 'get' 
-        ? await api.get<ApiResponse<T>>(fullUrl)
-        : await api.post<ApiResponse<T>>(endpoint, data);
+        ? await api.get<T>(fullUrl, config)
+        : await api.post<T>(fullUrl, {}, config); // POST with query params, empty body
       
       const duration = Date.now() - startTime;
       console.log(`Request to ${api.defaults.baseURL}${fullUrl} succeeded in ${duration}ms`);
@@ -114,6 +119,7 @@ class Api {
   async post<T>(endpoint: string, data = {}): Promise<T> {
     console.log('Starting POST request:', {
       endpoint,
+      data,
       primaryUrl: this.primaryApi.defaults.baseURL,
       fallbackUrl: this.fallbackApi.defaults.baseURL
     });
@@ -127,6 +133,32 @@ class Api {
       try {
         // Se falhar, tenta a API local
         return await this.tryRequest<T>(this.fallbackApi, 'post', endpoint, data);
+      } catch (fallbackError) {
+        console.error('Both APIs failed');
+        throw new Error('Todas as tentativas de API falharam');
+      }
+    }
+  }
+
+  // Method for heavy operations that need longer timeout (TEMPO, Daymet)
+  async getLongRunning<T>(endpoint: string, params = {}): Promise<T> {
+    console.log('Starting LONG-RUNNING GET request:', {
+      endpoint,
+      params,
+      timeout: `${this.LONG_TIMEOUT}ms`,
+      primaryUrl: this.primaryApi.defaults.baseURL,
+      fallbackUrl: this.fallbackApi.defaults.baseURL
+    });
+
+    try {
+      // Tenta primeiro a API do ngrok com timeout longo
+      return await this.tryRequest<T>(this.primaryApi, 'get', endpoint, params, this.LONG_TIMEOUT);
+    } catch (primaryError) {
+      console.warn('Primary API failed, trying fallback with long timeout...');
+      
+      try {
+        // Se falhar, tenta a API local com timeout longo
+        return await this.tryRequest<T>(this.fallbackApi, 'get', endpoint, params, this.LONG_TIMEOUT);
       } catch (fallbackError) {
         console.error('Both APIs failed');
         throw new Error('Todas as tentativas de API falharam');

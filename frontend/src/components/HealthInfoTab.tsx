@@ -4,7 +4,7 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { 
   Heart, 
-  Lungs, 
+  Wind, 
   Shield, 
   AlertTriangle, 
   CheckCircle, 
@@ -67,7 +67,7 @@ const HealthInfoTab = ({
       id: 'lung-disease',
       name: 'Lung Disease Patients',
       description: 'Asthma, COPD, bronchitis',
-      icon: <Lungs className="h-5 w-5" />,
+      icon: <Wind className="h-5 w-5" />,
       csvKey: 'Lung disease patients'
     },
     {

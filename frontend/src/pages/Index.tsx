@@ -104,6 +104,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
   }
 };
 
+
   // Function to fetch weather forecast data
   const fetchWeatherForecast = async (lat: number, lon: number) => {
     setIsLoadingWeather(true);

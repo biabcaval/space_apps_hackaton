@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from datetime import datetime, timezone
 from collections import defaultdict
 import statistics
+from typing import List, Dict, Any
 from app.config import API_KEYS
 
 async def fetch_pollution_data(lat: float, lon: float, endpoint: str):
@@ -156,3 +157,74 @@ def calculate_daily_averages(forecast_list):
     daily_averages.sort(key=lambda x: x['date'])
     
     return daily_averages
+
+async def search_location(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """
+    Search for locations using OpenWeatherMap Geocoding API with fallback support
+    """
+    last_error = None
+    
+    for i, api_key in enumerate(API_KEYS, 1):
+        try:
+            url = f"http://api.openweathermap.org/geo/1.0/direct?q={query}&limit={limit}&appid={api_key}"
+            
+            print(f"Trying API key {i}/{len(API_KEYS)} for geocoding search...")
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            
+            locations = response.json()
+            
+            # Format the response to include all relevant information
+            formatted_locations = []
+            for location in locations:
+                formatted_location = {
+                    "name": location.get("name", ""),
+                    "lat": location.get("lat"),
+                    "lon": location.get("lon"),
+                    "country": location.get("country", ""),
+                    "state": location.get("state", ""),
+                    "formatted": format_location_name(location)
+                }
+                formatted_locations.append(formatted_location)
+            
+            print(f"Success with API key {i} - found {len(formatted_locations)} locations")
+            return formatted_locations
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                print(f"API key {i} unauthorized (401) - trying next key...")
+                last_error = f"API key {i} unauthorized"
+            elif e.response.status_code == 429:
+                print(f"API key {i} rate limited (429) - trying next key...")
+                last_error = f"API key {i} rate limited"
+            else:
+                print(f"API key {i} HTTP error {e.response.status_code} - trying next key...")
+                last_error = f"API key {i} HTTP error {e.response.status_code}"
+            continue
+        except requests.exceptions.RequestException as e:
+            print(f"API key {i} network error: {e} - trying next key...")
+            last_error = f"API key {i} network error: {str(e)}"
+            continue
+    
+    # If all API keys failed
+    raise HTTPException(
+        status_code=503, 
+        detail=f"Unable to search locations. All {len(API_KEYS)} API keys failed. Last error: {last_error}"
+    )
+
+def format_location_name(location: Dict[str, Any]) -> str:
+    """
+    Format location data into a readable string
+    """
+    parts = []
+    
+    if location.get("name"):
+        parts.append(location["name"])
+    
+    if location.get("state"):
+        parts.append(location["state"])
+    
+    if location.get("country"):
+        parts.append(location["country"])
+    
+    return ", ".join(parts)

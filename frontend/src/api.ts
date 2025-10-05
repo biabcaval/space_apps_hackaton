@@ -3,7 +3,7 @@ import { API_CONFIG } from './config/api';
 
 interface ApiResponse<T = any> {
   success: boolean;
-  data: T;
+  data: T | null;
   message?: string;
 }
 
@@ -60,7 +60,12 @@ class Api {
       const duration = Date.now() - startTime;
       console.log(`Request to ${api.defaults.baseURL}${fullUrl} succeeded in ${duration}ms`);
       
-      return response.data.data;
+      // Validação adicional para garantir que temos dados
+      if (!response.data || !response.data.data) {
+        throw new Error('Resposta da API não contém dados válidos');
+      }
+      
+      return response.data;
     } catch (error) {
       if (this.isAxiosError(error)) {
         console.error(`Request failed for ${api.defaults.baseURL}${endpoint}:`, {

@@ -1,0 +1,8 @@
+INFO:     Will watch for changes in these directories: ['/Users/biabc/Documents/space_apps_hackaton/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [50589] using StatReload
+INFO:     Started server process [50603]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Loaded 3 OpenWeatherMap API key(s) for fallback support
+INFO:     127.0.0.1:57520 - "GET / HTTP/1.1" 200 OK

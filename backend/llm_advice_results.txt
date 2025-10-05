@@ -1,0 +1,154 @@
+Loaded 3 OpenWeatherMap API key(s) for fallback support
+
+🧪 Starting LLM Advice Test...
+
+Note: This test requires OpenAI API key to be set in environment variables
+If API is not available, fallback advice will be used
+
+================================================================================
+TESTING LLM ADVICE GENERATION FOR DIFFERENT RISK GROUPS
+================================================================================
+
+Test Conditions:
+  AQI: 3 (Moderate)
+  PM2.5: 35.5 μg/m³
+  PM10: 60.2 μg/m³
+  NO2: 85.3 μg/m³
+  O3: 110.7 μg/m³
+
+================================================================================
+
+
+================================================================================
+GENERATING ADVICE FOR: Elderly (65+)
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for Elderly (65+):
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Limit time outdoors, especially during afternoon
+• Avoid heavy traffic areas
+• Monitor for shortness of breath or fatigue
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Children
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for Children:
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Reduce prolonged outdoor play time
+• Consider indoor activities during afternoon
+• Parents: monitor for coughing or wheezing
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Respiratory Conditions
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for People with Respiratory Conditions:
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Reduce outdoor time significantly
+• Keep rescue inhaler always accessible
+• Avoid areas with heavy traffic
+• May need to increase controller medication - consult doctor
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: People with Cardiovascular Conditions
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for People with Cardiovascular Conditions:
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Limit outdoor activities
+• No strenuous exercise outdoors
+• Monitor blood pressure more frequently
+• Watch for chest discomfort or irregular heartbeat
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Pregnant Women
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for Pregnant Women:
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Reduce outdoor time
+• Avoid traffic congestion areas (CO exposure)
+• Move exercise indoors
+• Ensure good indoor air quality
+--------------------------------------------------------------------------------
+
+
+================================================================================
+GENERATING ADVICE FOR: Outdoor Workers
+================================================================================
+⚠️  OpenAI library not installed
+
+✅ Success!
+Source: Fallback (Library Not Installed)
+
+Advice for Outdoor Workers:
+--------------------------------------------------------------------------------
+Air quality is moderate - sensitive groups should take precautions
+
+• Request reduced work hours if possible
+• Take frequent breaks indoors
+• Wear N95 mask during heavy exertion
+• Stay very hydrated
+--------------------------------------------------------------------------------
+
+
+================================================================================
+SUMMARY - CHECKING FOR UNIQUENESS
+================================================================================
+
+Comparing advice for different groups to verify uniqueness...
+
+📊 Generated 6 pieces of advice
+📊 6 unique responses
+✅ SUCCESS: All advice is unique to each risk group!
+
+🔍 Checking for group-specific terminology:
+  ⚠️  Elderly (65+): No specific keywords found
+  ✅ Children: Found keywords ['parents', 'play']
+  ✅ People with Respiratory Conditions: Found keywords ['inhaler']
+  ✅ People with Cardiovascular Conditions: Found keywords ['heart', 'blood pressure']
+  ⚠️  Pregnant Women: No specific keywords found
+  ✅ Outdoor Workers: Found keywords ['mask', 'work', 'break']
+
+================================================================================
+TEST COMPLETE
+================================================================================

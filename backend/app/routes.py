@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query
+from typing import Optional, Dict
 from app.services import (
     fetch_pollution_data, 
     fetch_daily_forecast_data, 
@@ -6,7 +7,8 @@ from app.services import (
     fetch_weather_forecast,
     fetch_tempo_gas_volume,
     fetch_daymet_data,
-    fetch_daymet_climate_summary
+    fetch_daymet_climate_summary,
+    generate_health_advice
 )
 
 router = APIRouter()
@@ -153,3 +155,42 @@ async def get_daymet_climate_summary(
     Default: 10-year climate summary (temperature and precipitation only)
     """
     return await fetch_daymet_climate_summary(lat, lon, start_year, end_year)
+
+
+@router.post("/health/advice")
+async def get_health_advice(
+    aqi: int = Query(..., description="Air Quality Index (1-5)", ge=1, le=5),
+    risk_group: str = Query(..., description="Risk group name"),
+    pm2_5: Optional[float] = Query(None, description="PM2.5 concentration (μg/m³)"),
+    pm10: Optional[float] = Query(None, description="PM10 concentration (μg/m³)"),
+    no2: Optional[float] = Query(None, description="NO2 concentration (μg/m³)"),
+    o3: Optional[float] = Query(None, description="O3 concentration (μg/m³)")
+):
+    """
+    Generate personalized health advice using LLM for a specific risk group
+    
+    This endpoint uses OpenAI's GPT model to generate tailored health recommendations
+    based on the current air quality index and pollutant levels. If the API is unavailable,
+    it returns fallback advice based on predefined rules.
+    
+    Risk groups include:
+    - General Population
+    - Elderly (65+)
+    - Children
+    - People with Respiratory Conditions
+    - People with Cardiovascular Conditions
+    - Pregnant Women
+    - Outdoor Workers
+    """
+    # Build pollutants dictionary
+    pollutants = {}
+    if pm2_5 is not None:
+        pollutants['pm2_5'] = pm2_5
+    if pm10 is not None:
+        pollutants['pm10'] = pm10
+    if no2 is not None:
+        pollutants['no2'] = no2
+    if o3 is not None:
+        pollutants['o3'] = o3
+    
+    return await generate_health_advice(aqi, risk_group, pollutants if pollutants else None)

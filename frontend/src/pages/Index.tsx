@@ -79,6 +79,12 @@ const Index = () => {
         setAirPollutionData(data);
       } else {
         // TEMPO API - fetch gas data (e.g., NO2)
+        // Show loading message while searching backwards
+        toast({
+          title: "Searching TEMPO Data",
+          description: "Searching for the most recent satellite data available...",
+        });
+        
         // Try to get current data first, backend will search backwards if not available
         const today = new Date();
         const endDateStr = today.toISOString().split('T')[0]; // Today
@@ -89,13 +95,33 @@ const Index = () => {
         startDate.setDate(startDate.getDate() - 30); // 30 days ago (for reference)
         const startDateStr = startDate.toISOString().split('T')[0];
         
-        const data = await api.get("/air-pollution/tempo", { 
+        const data = await api.getLongRunning<any>("/air-pollution/tempo", { 
           gas: "NO2", 
           lat, 
-          lon,
-          start_date: startDateStr,
-          end_date: endDateStr
+          lon, 
+          start_date: startDateStr, 
+          end_date: endDateStr 
         });
+        
+        // Check if data is from a past date
+        if (data?.data_date) {
+          const dataDate = new Date(data.data_date);
+          const today = new Date();
+          const daysDiff = Math.floor((today.getTime() - dataDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff > 0) {
+            toast({
+              title: "Historical Data Loaded",
+              description: `Showing TEMPO satellite data from ${data.data_date} (${daysDiff} day${daysDiff > 1 ? 's' : ''} ago). This is the most recent data available for this location.`,
+            });
+          } else {
+            toast({
+              title: "Data Loaded",
+              description: `TEMPO satellite data loaded successfully.`,
+            });
+          }
+        }
+        
         setAirPollutionData(data);
       }
     } catch (error) {
@@ -202,7 +228,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
       const currentYear = new Date().getFullYear();
       const lastYear = currentYear - 1;
       
-      const data = await api.get("/weather/daymet", {
+      const data = await api.getLongRunning("/weather/daymet", {
         lat,
         lon,
         variables: "tmax,tmin,prcp",
@@ -729,6 +755,16 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                   <div className="text-xs text-muted-foreground mb-1">Data Date</div>
                                   <div className="font-semibold text-sm">
                                     {airPollutionData.data_date || "N/A"}
+                                    {airPollutionData.data_date && (() => {
+                                      const dataDate = new Date(airPollutionData.data_date);
+                                      const today = new Date();
+                                      const daysDiff = Math.floor((today.getTime() - dataDate.getTime()) / (1000 * 60 * 60 * 24));
+                                      return daysDiff > 0 ? (
+                                        <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                          ({daysDiff} day{daysDiff > 1 ? 's' : ''} ago)
+                                        </div>
+                                      ) : null;
+                                    })()}
                                   </div>
                                 </div>
                               </div>
@@ -772,6 +808,12 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                       airQualityIndex={airPollutionData.data.list[0].main.aqi}
                       gasConcentration={airPollutionData.data.list[0].components.no2}
                       location={locationAddress || `Coordinates: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
+                      pollutants={{
+                        pm2_5: airPollutionData.data.list[0].components.pm2_5,
+                        pm10: airPollutionData.data.list[0].components.pm10,
+                        no2: airPollutionData.data.list[0].components.no2,
+                        o3: airPollutionData.data.list[0].components.o3
+                      }}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-80">

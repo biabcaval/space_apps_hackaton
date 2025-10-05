@@ -3,11 +3,16 @@ import NotificationModal from "../components/NotificationModal";
 import LocationSearchModal from "../components/LocationSearchModal";
 import UserLocationMap from "../components/UserLocationMap";
 import WeatherForecast from "../components/WeatherForecast";
+import DaymetVisualization from "../components/DaymetVisualization";
 import ErrorBoundary from "../components/ErrorBoundary";
+import HealthInfoTab from "../components/HealthInfoTab";
 import { Button } from "../components/ui/button";
-import { MapPin, Loader2, Bell, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { MapPin, Loader2, Bell, Search, Satellite, Cloud, BarChart3 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { api } from "../api";
+
+type DataSource = "openweather" | "tempo";
 
 // Helper function to get AQI description
 const getAQIDescription = (aqi: number): string => {
@@ -59,21 +64,55 @@ const Index = () => {
   const [showForecast, setShowForecast] = useState(false);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [dataSource, setDataSource] = useState<DataSource>("openweather");
+  const [daymetData, setDaymetData] = useState<any>(null);
+  const [isLoadingDaymet, setIsLoadingDaymet] = useState(false);
+  const [showDaymetViz, setShowDaymetViz] = useState(false);
   const { toast } = useToast();
 
-  // Function to fetch air pollution data
+  // Function to fetch air pollution data based on data source
   const fetchAirPollutionData = async (lat: number, lon: number) => {
     setIsLoadingAirData(true);
     try {
-      const data = await api.get("/air-pollution/current", { lat, lon });
-      setAirPollutionData(data);
+      if (dataSource === "openweather") {
+        const data = await api.get("/air-pollution/current", { lat, lon });
+        setAirPollutionData(data);
+      } else {
+        // TEMPO API - fetch gas data (e.g., NO2)
+        // Try to get current data first, backend will search backwards if not available
+        const today = new Date();
+        const endDateStr = today.toISOString().split('T')[0]; // Today
+        
+        // Start date is not really used for searching, but required by API
+        // The find_available_data function will search backwards from end_date
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 30); // 30 days ago (for reference)
+        const startDateStr = startDate.toISOString().split('T')[0];
+        
+        const data = await api.get("/air-pollution/tempo", { 
+          gas: "NO2", 
+          lat, 
+          lon,
+          start_date: startDateStr,
+          end_date: endDateStr
+        });
+        setAirPollutionData(data);
+      }
     } catch (error) {
       console.error('Error fetching air pollution data:', error);
+      
+      const errorMessage = dataSource === "tempo" 
+        ? "TEMPO satellite data not available for this location. Note: TEMPO only covers the continental US and has a 2-3 day processing delay. Try a major US city or switch to OpenWeather for global coverage."
+        : "Unable to fetch air quality data. Please try again.";
+      
       toast({
         title: "Air Quality Error",
-        description: "Unable to fetch air quality data. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Clear previous data on error
+      setAirPollutionData(null);
     } finally {
       setIsLoadingAirData(false);
     }
@@ -83,13 +122,13 @@ const Index = () => {
 const fetchAirPollutionForecast = async (lat: number, lon: number) => {
   setIsLoadingForecast(true);
   try {
-    const data = await api.get("/air-pollution/forecast-daily", { lat, lon });
+    const data = await api.get("/air-pollution/forecast-daily", { lat, lon }) as any;
     setForecastData(data);
     setShowForecast(true);
     
     toast({
       title: "Daily Forecast Loaded!",
-      description: `${data.daily_forecast.length} days of air quality forecast available.`,
+      description: `${data?.daily_forecast?.length || 0} days of air quality forecast available.`,
     });
   } catch (error) {
     console.error('Error fetching air pollution forecast:', error);
@@ -102,6 +141,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
     setIsLoadingForecast(false);
   }
 };
+
 
   // Function to fetch weather forecast data
   const fetchWeatherForecast = async (lat: number, lon: number) => {
@@ -138,6 +178,56 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
       });
     } finally {
       setIsLoadingWeather(false);
+    }
+  };
+
+  // Function to fetch Daymet climate data
+  const fetchDaymetData = async (lat: number, lon: number) => {
+    // Check if coordinates are within Daymet coverage (North America)
+    if (lat < 14.5 || lat > 52.0 || lon < -131.0 || lon > -53.0) {
+      toast({
+        title: "Location outside coverage",
+        description: "Daymet data is only available for North America (14.5°N to 52.0°N, -131.0°W to -53.0°W)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show the visualization component first, then load data
+    setShowDaymetViz(true);
+    setIsLoadingDaymet(true);
+    
+    try {
+      // Fetch last year's data for visualization
+      const currentYear = new Date().getFullYear();
+      const lastYear = currentYear - 1;
+      
+      const data = await api.get("/weather/daymet", {
+        lat,
+        lon,
+        variables: "tmax,tmin,prcp",
+        years: lastYear.toString()
+      });
+      
+      console.log('Daymet API response:', data);
+      setDaymetData(data);
+      
+      toast({
+        title: "Climate data loaded!",
+        description: `Daymet climate data for ${lastYear} has been loaded.`,
+      });
+      
+    } catch (error) {
+      console.error('Error fetching Daymet data:', error);
+      setDaymetData(null);
+      setShowDaymetViz(false); // Hide on error
+      toast({
+        title: "Error loading climate data",
+        description: "Failed to load Daymet climate data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDaymet(false);
     }
   };
 
@@ -218,10 +308,31 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
     await fetchWeatherForecast(lat, lng);
   };
 
+  const handleDataSourceChange = (newSource: DataSource) => {
+    setDataSource(newSource);
+    
+    toast({
+      title: `Data Source Changed`,
+      description: `Now using ${newSource === "openweather" ? "OpenWeather API" : "NASA TEMPO Satellite Data"}${newSource === "tempo" ? " (US locations only)" : ""}`,
+    });
+    
+    // Refetch data if location is set
+    if (latitude && longitude) {
+      fetchAirPollutionData(latitude, longitude);
+    }
+  };
+
   useEffect(() => {
     // Show notification modal on first visit
     setShowNotificationModal(true);
   }, []);
+  
+  // Refetch data when data source changes
+  useEffect(() => {
+    if (latitude && longitude) {
+      fetchAirPollutionData(latitude, longitude);
+    }
+  }, [dataSource]);
 
   return (
     <>
@@ -234,10 +345,11 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
         open={showLocationSearchModal}
         onOpenChange={setShowLocationSearchModal}
         onLocationSelect={handleLocationSelect}
+        usOnly={dataSource === "tempo"}
       />
       
       <div className="min-h-screen flex flex-col">
-        <header className="bg-gradient-to-r from-blue-yonder via-neon-blue to-electric-blue border-b border-border py-4 px-6 shadow-lg">
+        <header className="bg-gradient-to-r from-blue-yonder via-neon-blue to-electric-blue border-b border-border py-8 px-6 shadow-lg rounded-b-3xl">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -247,84 +359,128 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                 <h1 className="text-xl font-bold text-white">Air Quality Monitor</h1>
                 <p className="text-sm text-white/80">Real-time environmental data</p>
               </div>
+              <div className="hidden md:block ml-6 pl-6 border-l border-white/30">
+                <p className="text-sm font-medium text-white/90 italic">
+                  "Don't let pollution take your breath away"
+                </p>
+              </div>
             </div>
             
-            <button
-              onClick={() => setShowNotificationModal(true)}
-              className="text-sm text-white hover:text-white/80 transition-colors font-medium bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2"
-            >
-              <Bell className="h-4 w-4" />
-              Notification Settings
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Data Source Toggle */}
+              <Select value={dataSource} onValueChange={(value: DataSource) => handleDataSourceChange(value)}>
+                <SelectTrigger className="w-[180px] text-sm text-white bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      {dataSource === "openweather" ? (
+                        <>
+                          <Cloud className="h-4 w-4" />
+                          <span>OpenWeather</span>
+                        </>
+                      ) : (
+                        <>
+                          <Satellite className="h-4 w-4" />
+                          <span>NASA TEMPO</span>
+                        </>
+                      )}
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openweather">
+                    <div className="flex items-center gap-2">
+                      <Cloud className="h-4 w-4" />
+                      <span>OpenWeather</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="tempo">
+                    <div className="flex items-center gap-2">
+                      <Satellite className="h-4 w-4" />
+                      <span>NASA TEMPO 🇺🇸</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Notifications Button */}
+              <button
+                onClick={() => setShowNotificationModal(true)}
+                className="text-sm text-white hover:text-white/80 transition-colors font-medium bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                Notification Settings
+              </button>
+            </div>
           </div>
         </header>
 
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Location Controls */}
-            <div className="bg-card rounded-lg shadow-lg p-6 border">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold">Location</h2>
-                  <p className="text-muted-foreground">Get your current location or search for any location worldwide</p>
+            <div className="bg-card rounded-lg shadow-sm p-4 border">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold">Location</h2>
+                    {latitude && longitude && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {locationAddress ? (
+                          <span className="font-medium text-foreground">{locationAddress}</span>
+                        ) : (
+                          <span>{latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={() => setShowLocationSearchModal(true)}
                     variant="outline"
-                    size="lg"
+                    size="sm"
                     className="flex items-center gap-2"
                   >
-                    <Search className="h-5 w-5" />
-                    Search Location
+                    <Search className="h-4 w-4" />
+                    Search
                   </Button>
                   <Button
                     onClick={getCurrentLocation}
                     disabled={isGettingLocation}
-                    size="lg"
+                    size="sm"
                     className="flex items-center gap-2"
                   >
                     {isGettingLocation ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Getting Location...
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Getting...
                       </>
                     ) : (
                       <>
-                        <MapPin className="h-5 w-5" />
-                        Get My Location
+                        <MapPin className="h-4 w-4" />
+                        My Location
                       </>
                     )}
                   </Button>
                 </div>
               </div>
-              
-              {latitude && longitude && (
-                <div className="text-sm text-muted-foreground bg-muted p-3 rounded border">
-                  <div className="font-medium text-foreground mb-1">Current Location:</div>
-                  {locationAddress && (
-                    <div className="mb-1">{locationAddress}</div>
-                  )}
-                  <div>Coordinates: {latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
-                </div>
-              )}
             </div>
 
             {/* Map and Air Quality Display */}
             {latitude && longitude ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Map Section */}
-                <div className="bg-card rounded-lg shadow-lg p-6 border">
-                  <h3 className="text-xl font-semibold mb-4">Map View</h3>
-                  <UserLocationMap 
-                    latitude={latitude} 
-                    longitude={longitude}
-                    className="h-96 w-full"
-                  />
-                </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Map Section */}
+                  <div className="bg-card rounded-lg shadow-lg p-6 border">
+                    <h3 className="text-xl font-semibold mb-4">Map View</h3>
+                    <UserLocationMap 
+                      latitude={latitude} 
+                      longitude={longitude}
+                      className="h-96 w-full"
+                    />
+                  </div>
 
-                {/* Air Quality Section */}
-                <div className="bg-card rounded-lg shadow-lg p-6 border">
+                  {/* Air Quality Section */}
+                  <div className="bg-card rounded-lg shadow-lg p-6 border">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold">Air Quality Data</h3>
                     {latitude && longitude && (
@@ -350,6 +506,25 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                             </>
                           ) : (
                             "Forecast"
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchDaymetData(latitude, longitude)}
+                          disabled={isLoadingDaymet}
+                          className="flex items-center gap-1"
+                        >
+                          {isLoadingDaymet ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <BarChart3 className="h-4 w-4" />
+                              Climate
+                            </>
                           )}
                         </Button>
                       </div>
@@ -457,72 +632,124 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
 
                   ) : !showForecast && airPollutionData ? (
                     <div className="space-y-4">
-                      {/* Air Quality Index */}
-                      <div className="bg-muted p-8 rounded-lg border">
-                        <h4 className="font-semibold mb-6 text-xl text-center">Air Quality Index (AQI)</h4>
-                        <div className="flex flex-col items-center text-center space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex items-baseline justify-center gap-2">
-                              <span className="text-5xl font-bold text-primary">
-                                {airPollutionData.data.list[0].main.aqi}
-                              </span>
-                              <span className="text-lg font-medium text-muted-foreground">
-                                AQI
-                              </span>
-                            </div>
-                            <div className="text-base text-muted-foreground leading-relaxed max-w-md">
-                              {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
-                            </div>
+                      {dataSource === "openweather" && airPollutionData.data?.list?.[0] ? (
+                        <>
+                          {/* Air Quality Index - OpenWeather */}
+                          <div className="bg-muted p-8 rounded-lg border">
+                            <h4 className="font-semibold mb-6 text-xl text-center">Air Quality Index (AQI)</h4>
+                            <div className="flex flex-col items-center text-center space-y-4">
+                              <div className="space-y-2">
+                                <div className="flex items-baseline justify-center gap-2">
+                                  <span className="text-5xl font-bold text-primary">
+                                    {airPollutionData.data.list[0].main.aqi}
+                                  </span>
+                                  <span className="text-lg font-medium text-muted-foreground">
+                                    AQI
+                                  </span>
+                                </div>
+                                <div className="text-base text-muted-foreground leading-relaxed max-w-md">
+                                  {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
+                                </div>
 
-                            <div className="flex-shrink-0 pl-60">
-                            <img 
-                              src={getAQIImage(airPollutionData.data.list[0].main.aqi)}
-                              alt={`AQI ${airPollutionData.data.list[0].main.aqi} - ${getAQIDescription(airPollutionData.data.list[0].main.aqi).split(' - ')[0]}`}
-                              className="w-16 h-16 object-contain"
-                            />
+                                <div className="flex-shrink-0 pl-60">
+                                <img 
+                                  src={getAQIImage(airPollutionData.data.list[0].main.aqi)}
+                                  alt={`AQI ${airPollutionData.data.list[0].main.aqi} - ${getAQIDescription(airPollutionData.data.list[0].main.aqi).split(' - ')[0]}`}
+                                  className="w-16 h-16 object-contain"
+                                />
+                              </div>
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Pollutant Components - OpenWeather */}
+                          <div className="space-y-3">
+                            <h4 className="font-semibold">Pollutant Concentrations (μg/m³)</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">CO</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.co}</div>
+                              </div>
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">NO₂</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.no2}</div>
+                              </div>
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">O₃</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.o3}</div>
+                              </div>
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">PM2.5</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.pm2_5}</div>
+                              </div>
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">PM10</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.pm10}</div>
+                              </div>
+                              <div className="bg-muted p-3 rounded">
+                                <div className="text-sm text-muted-foreground">SO₂</div>
+                                <div className="font-semibold">{airPollutionData.data.list[0].components.so2}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      ) : dataSource === "tempo" && airPollutionData.gas_type ? (
+                        <>
+                          {/* NASA TEMPO Satellite Data */}
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-8 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-2 mb-6 justify-center">
+                              <Satellite className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                              <h4 className="font-semibold text-xl text-center">NASA TEMPO Satellite Data</h4>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="text-center">
+                                <div className="text-sm text-muted-foreground mb-2">Gas Type</div>
+                                <div className="text-2xl font-bold text-primary">{airPollutionData.gas_type}</div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
+                                  <div className="text-xs text-muted-foreground mb-1">Column Density</div>
+                                  <div className="font-semibold">
+                                    {airPollutionData.measurements?.tropospheric_column_density_m2?.toFixed(6) || "N/A"} m²
+                                  </div>
+                                </div>
+                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
+                                  <div className="text-xs text-muted-foreground mb-1">Estimated Volume</div>
+                                  <div className="font-semibold">
+                                    {airPollutionData.measurements?.estimated_volume_m3?.toFixed(2) || "N/A"} m³
+                                  </div>
+                                </div>
+                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
+                                  <div className="text-xs text-muted-foreground mb-1">Elevation</div>
+                                  <div className="font-semibold">
+                                    {airPollutionData.location?.elevation_m?.toFixed(0) || "N/A"} m
+                                  </div>
+                                </div>
+                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
+                                  <div className="text-xs text-muted-foreground mb-1">Data Date</div>
+                                  <div className="font-semibold text-sm">
+                                    {airPollutionData.data_date || "N/A"}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-xs text-center text-muted-foreground">
+                                Source: {airPollutionData.metadata?.source || "NASA TEMPO Level 3"}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="bg-yellow-50 dark:bg-yellow-950/30 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div className="text-center space-y-2">
+                            <p className="font-semibold text-yellow-800 dark:text-yellow-200">Unexpected Data Format</p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                              The API returned data in an unexpected format. Please check the raw response below.
+                            </p>
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Pollutant Components */}
-                      <div className="space-y-3">
-                        <h4 className="font-semibold">Pollutant Concentrations (μg/m³)</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">CO</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.co}</div>
-                          </div>
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">NO₂</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.no2}</div>
-                          </div>
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">O₃</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.o3}</div>
-                          </div>
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">PM2.5</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.pm2_5}</div>
-                          </div>
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">PM10</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.pm10}</div>
-                          </div>
-                          <div className="bg-muted p-3 rounded">
-                            <div className="text-sm text-muted-foreground">SO₂</div>
-                            <div className="font-semibold">{airPollutionData.data.list[0].components.so2}</div>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Raw Data (Collapsible) */}
-                      <details className="bg-muted p-4 rounded-lg">
-                        <summary className="cursor-pointer font-semibold">Raw API Response</summary>
-                        <pre className="mt-2 text-xs overflow-auto max-h-40 bg-background p-2 rounded">
-                          {JSON.stringify(airPollutionData, null, 2)}
-                        </pre>
-                      </details>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-96">
@@ -535,6 +762,36 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                     </div>
                   )}
                 </div>
+                </div>
+
+                {/* Risk Group Health Info Section */}
+                <div className="bg-card rounded-lg shadow-lg p-6 border">
+                  <h3 className="text-xl font-semibold mb-4">Risk Group Health Info</h3>
+                  {airPollutionData ? (
+                    <HealthInfoTab
+                      airQualityIndex={airPollutionData.data.list[0].main.aqi}
+                      gasConcentration={airPollutionData.data.list[0].components.no2}
+                      location={locationAddress || `Coordinates: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-80">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                          <MapPin className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground">Load air quality data to see health recommendations</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Weather Forecast Section */}
+                <ErrorBoundary>
+                  <WeatherForecast 
+                    weatherData={weatherData} 
+                    isLoading={isLoadingWeather} 
+                  />
+                </ErrorBoundary>
               </div>
             ) : (
               <div className="bg-card rounded-lg shadow-lg p-12 border">
@@ -552,13 +809,15 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
               </div>
             )}
 
-            {/* Weather Forecast Section */}
-            <ErrorBoundary>
-              <WeatherForecast 
-                weatherData={weatherData} 
-                isLoading={isLoadingWeather} 
-              />
-            </ErrorBoundary>
+            {/* Daymet Climate Visualization Section */}
+            {showDaymetViz && (
+              <ErrorBoundary>
+                <DaymetVisualization 
+                  data={daymetData} 
+                  isLoading={isLoadingDaymet} 
+                />
+              </ErrorBoundary>
+            )}
           </div>
         </main>
       </div>

@@ -8,6 +8,7 @@ interface LocationSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLocationSelect: (latitude: number, longitude: number, address: string) => void;
+  usOnly?: boolean;
 }
 
 interface LocationResult {
@@ -19,7 +20,22 @@ interface LocationResult {
   formatted: string;
 }
 
-const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationSearchModalProps) => {
+// US State name to abbreviation mapping for better TEMPO API compatibility
+const US_STATE_ABBREVIATIONS: { [key: string]: string } = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+  'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+  'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+  'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+  'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+  'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+  'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+  'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+  'District of Columbia': 'DC'
+};
+
+const LocationSearchModal = ({ open, onOpenChange, onLocationSelect, usOnly = false }: LocationSearchModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<LocationResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,16 +50,27 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationS
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:8000/geocoding/search?q=${encodeURIComponent(query)}&limit=5`
-      );
+      let url = `http://localhost:8000/geocoding/search?q=${encodeURIComponent(query)}&limit=10`;
+      if (usOnly) {
+        url += "&country=US"; // Add country filter for US only
+      }
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      setSuggestions(data.results || []);
+      let results = data.results || [];
+      
+      // Filter for US locations only if usOnly is true
+      if (usOnly) {
+        results = results.filter((location: LocationResult) => 
+          location.country === "US" || location.country === "United States"
+        );
+      }
+      
+      setSuggestions(results.slice(0, 5)); // Limit to 5 results
     } catch (error) {
       console.error('Error searching places:', error);
       toast({
@@ -72,10 +99,10 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationS
   };
 
   useEffect(() => {
-    if (searchQuery) {
+    if (searchQuery && searchQuery.length >= 2) {
       const timeoutId = setTimeout(() => {
         searchPlaces(searchQuery);
-      }, 300); // Debounce search
+      }, 800); // Increased debounce to 800ms for better UX
 
       return () => clearTimeout(timeoutId);
     } else {
@@ -91,15 +118,22 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationS
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Search Location
+            {usOnly && <span className="text-xs font-normal text-muted-foreground">🇺🇸 US Only</span>}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
+          {usOnly && (
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
+              <strong>Note:</strong> NASA TEMPO satellite data is only available for United States locations.
+            </div>
+          )}
+          
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search for a city or location..."
+              placeholder={usOnly ? "Search for a US city..." : "Search for a city or location..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -136,8 +170,8 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationS
           {searchQuery && suggestions.length === 0 && !isLoading && (
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No locations found for "{searchQuery}"</p>
-              <p className="text-sm">Try searching for a city name</p>
+              <p>No {usOnly ? "US " : ""}locations found for "{searchQuery}"</p>
+              <p className="text-sm">Try searching for a {usOnly ? "US " : ""}city name</p>
             </div>
           )}
 
@@ -149,11 +183,13 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect }: LocationS
           )}
 
           {!searchQuery && !isLoading && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Start typing to search for a location</p>
-              <p className="text-xs mt-1">Examples: London, New York, Tokyo, Paris</p>
-            </div>
+          <div className="text-center py-8 text-muted-foreground">
+            <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Type at least 2 characters to search</p>
+            <p className="text-xs mt-1">
+              Examples: {usOnly ? "New York, Los Angeles, Chicago, Houston" : "London, New York, Tokyo, Paris"}
+            </p>
+          </div>
           )}
         </div>
       </DialogContent>

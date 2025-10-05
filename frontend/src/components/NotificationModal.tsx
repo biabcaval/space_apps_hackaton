@@ -15,7 +15,7 @@ interface NotificationModalProps {
 
 
 const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -81,10 +81,10 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
     e.preventDefault();
     
     // Basic validation
-    if (!email || !phone) {
+    if (!name || !phone) {
       toast({
         title: "Missing Information",
-        description: "Please provide your email and phone number.",
+        description: "Please provide your name and phone number.",
         variant: "destructive",
       });
       return;
@@ -104,7 +104,7 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
     const locationData = { latitude, longitude, method: 'geolocation' };
     const location = `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
     
-    console.log("Notification preferences:", { email, phone, ...locationData });
+    console.log("Notification preferences:", { name, phone, ...locationData });
     
     toast({
       title: "Preferences Saved!",
@@ -141,13 +141,13 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="name"
+                type="text"
+                placeholder="Your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="transition-all"
               />
             </div>

@@ -170,7 +170,7 @@ def calculate_daily_averages(forecast_list):
     
     return daily_averages
 
-async def search_location(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+async def search_location(query: str, limit: int = 5, country: str = None) -> List[Dict[str, Any]]:
     """
     Search for locations using OpenWeatherMap Geocoding API with fallback support
     """
@@ -178,7 +178,11 @@ async def search_location(query: str, limit: int = 5) -> List[Dict[str, Any]]:
     
     for i, api_key in enumerate(OPENWEATHER_API_KEYS, 1):
         try:
+            # Build URL with optional country filter
             url = f"http://api.openweathermap.org/geo/1.0/direct?q={query}&limit={limit}&appid={api_key}"
+            if country:
+                # For US locations, append country code to query for better results
+                url = f"http://api.openweathermap.org/geo/1.0/direct?q={query},{country}&limit={limit}&appid={api_key}"
             
             print(f"Trying API key {i}/{len(OPENWEATHER_API_KEYS)} for geocoding search...")
             response = requests.get(url, timeout=10)
@@ -189,13 +193,15 @@ async def search_location(query: str, limit: int = 5) -> List[Dict[str, Any]]:
             # Format the response to include all relevant information
             formatted_locations = []
             for location in locations:
+                # Use state abbreviations for US locations when country filter is applied
+                use_abbreviations = country == "US"
                 formatted_location = {
                     "name": location.get("name", ""),
                     "lat": location.get("lat"),
                     "lon": location.get("lon"),
                     "country": location.get("country", ""),
                     "state": location.get("state", ""),
-                    "formatted": format_location_name(location)
+                    "formatted": format_location_name(location, use_abbreviations)
                 }
                 formatted_locations.append(formatted_location)
             
@@ -224,17 +230,37 @@ async def search_location(query: str, limit: int = 5) -> List[Dict[str, Any]]:
         detail=f"Unable to search locations. All {len(OPENWEATHER_API_KEYS)} API keys failed. Last error: {last_error}"
     )
 
-def format_location_name(location: Dict[str, Any]) -> str:
+def format_location_name(location: Dict[str, Any], use_state_abbreviations: bool = False) -> str:
     """
     Format location data into a readable string
     """
+    # US State name to abbreviation mapping for better TEMPO API compatibility
+    US_STATE_ABBREVIATIONS = {
+        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+        'District of Columbia': 'DC'
+    }
+    
     parts = []
     
     if location.get("name"):
         parts.append(location["name"])
     
     if location.get("state"):
-        parts.append(location["state"])
+        state = location["state"]
+        # Use abbreviation for US locations if requested
+        if use_state_abbreviations and location.get("country") == "US" and state in US_STATE_ABBREVIATIONS:
+            parts.append(US_STATE_ABBREVIATIONS[state])
+        else:
+            parts.append(state)
     
     if location.get("country"):
         parts.append(location["country"])
@@ -514,7 +540,7 @@ def find_available_data(
     end_date: str,
     POI_lat: float,
     POI_lon: float,
-    max_days: int = 30
+    max_days: int = 7  # Reduced from 30 to 7 days
 ) -> Tuple[Optional[str], Optional[list]]:
     """
     Search for available TEMPO data by incrementing days backwards
@@ -533,28 +559,28 @@ def find_available_data(
     # Convert string to datetime
     current_date = datetime.strptime(start_date, "%Y-%m-%d")
     
+    print(f"🔍 Searching for TEMPO {gas} data near ({POI_lat:.4f}, {POI_lon:.4f})")
+    print(f"   Searching up to {max_days} days backwards from {start_date}...")
+    
     for day in range(max_days):
         # Format current date
         date_str = current_date.strftime("%Y-%m-%d")
         date_start_time = f"{date_str} 00:00:00"
         date_end_time = f"{date_str} 23:59:59"
         
-        print(f"🔍 Searching TEMPO data for: {date_str}")
-        
         # Search for data
         POI_results = get_poi_results(gas, date_start_time, date_end_time, POI_lat, POI_lon, version="V3")
         
-        print(f"  Found {len(POI_results)} results")
-        
         # If found data, return
         if len(POI_results) > 0:
-            print(f"✅ TEMPO data found for {date_str}!")
+            print(f"✅ Found {len(POI_results)} TEMPO data file(s) for {date_str}")
             return date_str, POI_results
         
         # Decrement one day
         current_date -= timedelta(days=1)
     
-    print(f"❌ No TEMPO data found in the last {max_days} days")
+    print(f"❌ No TEMPO data found in the last {max_days} days for this location")
+    print(f"   Note: TEMPO satellite data may not be available for all US locations/dates")
     return None, None
 
 

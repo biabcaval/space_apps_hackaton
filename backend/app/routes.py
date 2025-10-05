@@ -53,13 +53,14 @@ async def get_daily_air_pollution_forecast(
 @router.get("/geocoding/search")
 async def search_locations(
     q: str = Query(..., description="Location query (city name, address, etc.)"),
-    limit: int = Query(5, description="Maximum number of results to return", ge=1, le=10)
+    limit: int = Query(5, description="Maximum number of results to return", ge=1, le=10),
+    country: str = Query(None, description="Country code filter (e.g., 'US')")
 ):
     """
     Search for locations using OpenWeatherMap Geocoding API
     Returns a list of matching locations with coordinates
     """
-    results = await search_location(q, limit)
+    results = await search_location(q, limit, country)
     return {
         "success": True,
         "query": q,

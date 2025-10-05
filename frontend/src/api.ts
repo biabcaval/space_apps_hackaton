@@ -52,18 +52,21 @@ class Api {
   ): Promise<T> {
     try {
       const startTime = Date.now();
-      // Build query string for both GET and POST (some POST endpoints use query params)
-      const queryParams = this.buildQueryString(data);
-      const fullUrl = `${endpoint}${queryParams}`;
-      
       const config = customTimeout ? { timeout: customTimeout } : {};
       
-      const response = method === 'get' 
-        ? await api.get<T>(fullUrl, config)
-        : await api.post<T>(fullUrl, {}, config); // POST with query params, empty body
+      let response;
+      if (method === 'get') {
+        // Para GET, use query params
+        const queryParams = this.buildQueryString(data);
+        const fullUrl = `${endpoint}${queryParams}`;
+        response = await api.get<T>(fullUrl, config);
+      } else {
+        // Para POST, use body data
+        response = await api.post<T>(endpoint, data, config);
+      }
       
       const duration = Date.now() - startTime;
-      console.log(`Request to ${api.defaults.baseURL}${fullUrl} succeeded in ${duration}ms`);
+      console.log(`Request to ${api.defaults.baseURL}${endpoint} succeeded in ${duration}ms`);
       
       return response.data;
     } catch (error) {

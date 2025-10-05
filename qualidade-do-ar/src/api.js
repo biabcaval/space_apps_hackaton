@@ -10,7 +10,13 @@ dotenv.config();
 
 const app = express();
 
-const mongoUri = `mongodb://${process.env.MONGO_USER || 'admin'}:${process.env.MONGO_PASSWORD || 'senha123'}@localhost:27017/${process.env.DB_NAME || 'air-quality'}?authSource=admin`;
+// if MONGO_URI from dotenv does not exist
+let mongoUri;
+if (!process.env.MONGO_URI) {
+  mongoUri = `mongodb://${process.env.MONGO_USER || 'admin'}:${process.env.MONGO_PASSWORD || 'senha123'}@localhost:27017/${process.env.DB_NAME || 'air-quality'}?authSource=admin`;
+} else {
+  mongoUri = process.env.MONGO_URI;
+}
 
 mongoose.connect(mongoUri)
   .then(async () => {
@@ -27,13 +33,6 @@ mongoose.connect(mongoUri)
 app.use(express.json());
 app.use('/api', userRoutes);
 app.use('/api', notificationRoutes);
-
-app.get("/air-quality-tempo", checkApiToken, validateCoordinates, async (req, res) => {
-  const { lat, lon } = req.query;
-  
- 
-});
-
 
 const PORT = process.env.PORT || 3001;
 

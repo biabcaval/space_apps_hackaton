@@ -113,6 +113,10 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
       location: {
         latitude: latitude,
         longitude: longitude
+      },
+      active: true,
+      notificationPreferences: {
+        frequency: 'realtime'
       }
     });
     

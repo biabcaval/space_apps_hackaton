@@ -34,6 +34,15 @@ class SchedulerService {
         const shouldSendNotification = this.shouldSendNotification(user, now);
         if (shouldSendNotification) {
           await this.processUserNotification(user);
+          
+          // atualiza usuário para ativo: false
+          user.active = false;
+          user.notificationPreferences = {
+            frequency: 'daily',
+            timeOfDay: '08:00',
+            timezone: 'America/Recife'
+          };
+          await user.save();
           // Aguarda timeout entre usuários
           await new Promise(resolve => setTimeout(resolve, this.TIMEOUT_BETWEEN_USERS));
         }

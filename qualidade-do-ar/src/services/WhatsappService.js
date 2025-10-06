@@ -93,8 +93,9 @@ class WhatsappService {
             timezone: 'America/Recife'
           });
 
-          const response = `Recebi sua localização (${msg.location.latitude}, ${msg.location.longitude}). 
-            Em breve enviarei informações sobre a qualidade do ar.`;
+          await UserService.setUserActive(user._id, true);
+
+          const response = `Just received your location! Latitude: ${msg.location.latitude}, Longitude: ${msg.location.longitude}. You will receive air quality updates shortly.`;
           await this.enqueueMessage(sender, response);
         }
 

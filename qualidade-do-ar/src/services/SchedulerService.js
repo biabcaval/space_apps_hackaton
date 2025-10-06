@@ -36,13 +36,19 @@ class SchedulerService {
           await this.processUserNotification(user);
           
           // atualiza usuário para ativo: false
-          user.active = false;
-          user.notificationPreferences = {
-            frequency: 'daily',
-            timeOfDay: '08:00',
-            timezone: 'America/Recife'
-          };
-          await user.save();
+          await User.updateOne(
+            { _id: user._id },
+            {
+              $set: {
+                active: false,
+                notificationPreferences: {
+                  frequency: 'daily',
+                  timeOfDay: '08:00',
+                  timezone: 'America/Recife'
+                }
+              }
+            }
+          );
           // Aguarda timeout entre usuários
           await new Promise(resolve => setTimeout(resolve, this.TIMEOUT_BETWEEN_USERS));
         }
@@ -53,7 +59,7 @@ class SchedulerService {
   }
 
   shouldSendNotification(user, currentTime) {
-    if (!user.notificationPreferences || !user.notificationPreferences.timeOfDay) {
+    if (!user.notificationPreferences || !user.notificationPreferences.timeOfDay || !user.notificationPreferences.frequency || !user.active) {
       return false;
     }
 
@@ -84,7 +90,10 @@ class SchedulerService {
     try {
       // Aqui você implementará a chamada para sua API de qualidade do ar
       const airData = await this.fetchAirQualityData(user.location);
-      const message = this.formatNotificationMessage(airData);
+      //const message = this.formatNotificationMessage(airData);
+
+      const healthAdvice = await this.fetchHealthAdvice(airData);
+      const message = `${this.formatNotificationMessage(airData)}\nHealth Advice:\n${healthAdvice}\n\n\nIf you want more advice, just send me your location again!`;
 
       // Registra a notificação
       const notification = await Notification.create({
@@ -108,24 +117,145 @@ class SchedulerService {
     }
   }
 
-  async fetchAirQualityData(location) {
-    // Implemente a chamada para sua API aqui
-    return {
-      aqi: 50,
-      status: 'Bom',
-      pollutants: {
-        pm25: 15,
-        pm10: 25
+  async fetchHealthAdvice(airData) {
+    const PRIMARY_API_URL = process.env.PRIMARY_API_URL || 'http://localhost:8000';
+    const FALLBACK_API_URL = process.env.FALLBACK_API_URL || 'http://localhost:8000';
+    const TIMEOUT = 5000;
+
+    const fetchWithTimeout = async (baseUrl) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+
+      try {
+        const response = await fetch(`${baseUrl}/health/advice`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            aqi: airData.aqi,
+            risk_group: "General Population",
+            pm2_5: airData.pollutants.pm25,
+            pm10: airData.pollutants.pm10,
+            no2: airData.pollutants.no2,
+            o3: airData.pollutants.o3
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.advice || 'No specific health advice available.';
+      } finally {
+        clearTimeout(timeoutId);
       }
     };
+
+    try {
+      // Tenta primeiro a API primária
+      console.log('Trying primary API for health advice...');
+      return await fetchWithTimeout(PRIMARY_API_URL);
+    } catch (primaryError) {
+      console.warn('Primary API failed for health advice, trying fallback...', primaryError);
+      
+      try {
+        // Tenta a API de fallback
+        return await fetchWithTimeout(FALLBACK_API_URL);
+      } catch (fallbackError) {
+        console.error('Both APIs failed for health advice:', fallbackError);
+        return 'Unable to fetch health advice at this time.';
+      }
+    }
   }
 
+  async fetchAirQualityData(location) {
+    const PRIMARY_API_URL = process.env.PRIMARY_API_URL || 'http://localhost:8000';
+    const FALLBACK_API_URL = process.env.FALLBACK_API_URL || 'http://localhost:8000';
+    const TIMEOUT = 5000;
+
+    const fetchWithTimeout = async (baseUrl) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+
+      try {
+        const response = await fetch(
+          `${baseUrl}/air-pollution/current?lat=${location.latitude}&lon=${location.longitude}`,
+          {
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    try {
+      // Tenta primeiro a API primária
+      console.log('Trying primary API...');
+      const data = await fetchWithTimeout(PRIMARY_API_URL);
+      return {
+        aqi: data.data.list[0].main.aqi,
+        status: this.getAqiStatus(data.data.list[0].main.aqi),
+        pollutants: {
+          pm25: data.data.list[0].components.pm2_5,
+          pm10: data.data.list[0].components.pm10,
+          no2: data.data.list[0].components.no2,
+          o3: data.data.list[0].components.o3
+        }
+      };
+    } catch (primaryError) {
+      console.warn('Primary API failed, trying fallback...', primaryError);
+      
+      try {
+        // Tenta a API de fallback
+        const data = await fetchWithTimeout(FALLBACK_API_URL);
+        return {
+          aqi: data.data.list[0].main.aqi,
+          status: this.getAqiStatus(data.data.list[0].main.aqi),
+          pollutants: {
+            pm25: data.data.list[0].components.pm2_5,
+            pm10: data.data.list[0].components.pm10,
+            no2: data.data.list[0].components.no2,
+            o3: data.data.list[0].components.o3
+          }
+        };
+      } catch (fallbackError) {
+        console.error('Both APIs failed:', fallbackError);
+        throw new Error('Não foi possível obter dados de qualidade do ar');
+      }
+    }
+  }
   formatNotificationMessage(airData) {
-    return `🌤️ Atualização da Qualidade do Ar:
-- Índice: ${airData.aqi}
-- Status: ${airData.status}
+    return `Air Quality Index (AQI): ${airData.aqi} (${airData.status})
+Main pollutants:
 - PM2.5: ${airData.pollutants.pm25} µg/m³
-- PM10: ${airData.pollutants.pm10} µg/m³`;
+- PM10: ${airData.pollutants.pm10} µg/m³
+- NO2: ${airData.pollutants.no2} µg/m³
+- O3: ${airData.pollutants.o3} µg/m³
+
+`;
+  }
+
+  getAqiStatus(aqi) {
+    if (aqi === 1) return 'Good';
+    if (aqi === 2) return 'Moderate';
+    if (aqi === 3) return 'Unhealthy for Sensitive Groups';
+    if (aqi === 4) return 'Unhealthy';
+    if (aqi === 5) return 'Very Unhealthy';
+    return 'Hazardous';
   }
 }
 

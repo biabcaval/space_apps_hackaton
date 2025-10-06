@@ -131,6 +131,24 @@ class UserService {
     }
   }
 
+  async setUserActive(userId, isActive) {
+    try {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { active: isActive },
+        { new: true, runValidators: true }
+      );
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      return user;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar status ativo do usuário: ${error.message}`);
+    }
+  }
+
   /**
    * Alterna o status ativo/inativo do usuário
    */

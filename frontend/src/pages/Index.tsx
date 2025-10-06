@@ -36,17 +36,17 @@ const getAQIDescription = (aqi: number): string => {
 const getAQIImage = (aqi: number): string => {
   switch (aqi) {
     case 1:
-      return "public/good.png";
+      return "good.png";
     case 2:
-      return "public/fair.png";
+      return "fair.png";
     case 3:
-      return "public/moderate.png";
+      return "moderate.png";
     case 4:
-      return "public/poor.png";
+      return "poor.png";
     case 5:
-      return "public/very-poor.png";
+      return "very-poor.png";
     default:
-      return "public/moderate.png"; // fallback to moderate
+      return "moderate.png"; // fallback to moderate
   }
 };
 

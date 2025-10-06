@@ -3,6 +3,9 @@ import moment from 'moment-timezone';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import WhatsappService from './WhatsappService.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 class SchedulerService {
   constructor() {

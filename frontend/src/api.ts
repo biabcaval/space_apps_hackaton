@@ -151,24 +151,25 @@ class Api {
       params,
       timeout: `${this.LONG_TIMEOUT}ms`,
       primaryUrl: this.primaryApi.defaults.baseURL,
-      fallbackUrl: this.fallbackApi.defaults.baseURL
+      fallbackUrl: this.fallbackApi.defaults.baseURL,
+      fullUrl: `${this.primaryApi.defaults.baseURL}${endpoint}${this.buildQueryString(params)}`
     });
 
     try {
       // Tenta primeiro a API do ngrok com timeout longo
-      return await this.tryRequest<T>(this.primaryApi, 'get', endpoint, params, this.LONG_TIMEOUT);
+      return await this.tryRequest<T>(this.primaryApi, 'get', endpoint, { params }, this.LONG_TIMEOUT);
     } catch (primaryError) {
       console.warn('Primary API failed, trying fallback with long timeout...');
-      
+
       try {
         // Se falhar, tenta a API local com timeout longo
-        return await this.tryRequest<T>(this.fallbackApi, 'get', endpoint, params, this.LONG_TIMEOUT);
+        return await this.tryRequest<T>(this.fallbackApi, 'get', endpoint, { params }, this.LONG_TIMEOUT);
       } catch (fallbackError) {
         console.error('Both APIs failed');
         throw new Error('Todas as tentativas de API falharam');
       }
     }
-  }
+}
 }
 
 // Exporta uma única instância da API

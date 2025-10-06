@@ -1714,7 +1714,7 @@ THE TEST: If I removed the group name from your advice, a reader should STILL be
             "aqi": aqi,
             "aqi_level": aqi_level,
             "advice": advice_text,
-            "source": "OpenAI GPT-3.5"
+            "source": "OpenAI GPT-3.5"    
         }
         
     except ImportError:

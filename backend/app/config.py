@@ -46,8 +46,8 @@ def load_openweather_api_keys():
 OPENWEATHER_API_KEYS = load_openweather_api_keys()
 
 # NASA Earthdata credentials (for TEMPO data)
-NASA_EARTHDATA_USERNAME = os.getenv("NASA_EARTHDATA_USERNAME")
-NASA_EARTHDATA_PASSWORD = os.getenv("NASA_EARTHDATA_PASSWORD")
+EARTHDATA_USERNAME = os.getenv("EARTHDATA_USERNAME")
+EARTHDATA_PASSWORD = os.getenv("EARTHDATA_PASSWORD")
 
 # Data directory for TEMPO downloads
 TEMPO_DATA_DIR = os.getenv("TEMPO_DATA_DIR", "data/")
@@ -88,7 +88,7 @@ async def close_mongodb_connection():
 
 def create_app():
     app = FastAPI(
-        title="Air Quality Monitor API",
+        title="BreezAPI",
         description="API for fetching air pollution data using OpenWeatherMap",
         version="1.0.0"
     )

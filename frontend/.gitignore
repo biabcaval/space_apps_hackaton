@@ -26,4 +26,4 @@ dist-ssr
 backend
 venv
 .venv
-
+.env

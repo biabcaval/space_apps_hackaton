@@ -16,7 +16,7 @@ def get_lat_lon(path = "data/US_GeoCode_elevation.csv", state_sigla):
     return df[df['stateSigla'] == state_sigla]['latitude'].values[0], df[df['stateSigla'] == state_sigla]['longitude'].values[0]
 '''
 
-def get_poi_results(gas, date_start, date_end, POI_lat, POI_lon, version="V3"):
+def get_poi_results(gas, date_start, date_end, POI_lat, POI_lon, version="V03"):
     "gas pode ser NO3, HCHO, 03PROF, O3TOT"
 
     POI_results = earthaccess.search_data(
@@ -130,7 +130,7 @@ def find_available_data(gas, start_date, end_date, POI_lat, POI_lon, max_days=30
         print(f"Procurando dados para: {date_str}")
         
         # Buscar dados
-        POI_results = get_poi_results(gas, date_start, date_end, POI_lat, POI_lon, version="V3")
+        POI_results = get_poi_results(gas, date_start, date_end, POI_lat, POI_lon, version="V03")
         
         print(f"  Resultados encontrados: {len(POI_results)}")
         

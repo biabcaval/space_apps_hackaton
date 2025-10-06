@@ -78,25 +78,38 @@ const Index = () => {
         const data = await api.get("/air-pollution/current", { lat, lon });
         setAirPollutionData(data);
       } else {
-        // TEMPO API - fetch gas data (e.g., NO2)
+        // TEMPO API - fetch multi-gas data (NO2, HCHO, O3PROF, O3TOT) with AQI estimation
         // Show loading message while searching backwards
         toast({
           title: "Searching TEMPO Data",
-          description: "Searching for the most recent satellite data available...",
+          description: "Fetching multiple gas measurements from satellite (NO2, HCHO, O3)...",
         });
         
-        // Try to get current data first, backend will search backwards if not available
+        // Optimize date range based on current month
+        // TEMPO data is only available until September 2025
         const today = new Date();
-        const endDateStr = today.toISOString().split('T')[0]; // Today
+        let endDate = new Date(today);
         
-        // Start date is not really used for searching, but required by API
-        // The find_available_data function will search backwards from end_date
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 30); // 30 days ago (for reference)
+        // If we're in October 2025 or later, go directly to September to avoid unnecessary searching
+        if (today.getFullYear() === 2025 && today.getMonth() >= 9) {
+          // October is month 9 (0-indexed)
+          // Set to September 20, 2025 (known good date with data)
+          endDate = new Date(2025, 8, 20); // Month 8 = September
+          console.log("📅 Optimized date range: Using September 2025 data (current month is October or later)");
+        } else if (today.getFullYear() > 2025) {
+          // For years after 2025, use last known good date
+          endDate = new Date(2025, 8, 20);
+          console.log("📅 Optimized date range: Using September 2025 data (latest available)");
+        }
+        
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        // Start date: 30 days before end date
+        const startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - 30);
         const startDateStr = startDate.toISOString().split('T')[0];
         
-        const data = await api.getLongRunning<any>("/air-pollution/tempo", { 
-          gas: "NO2", 
+        const data = await api.getLongRunning<any>("/air-pollution/tempo-current", { 
           lat, 
           lon, 
           start_date: startDateStr, 
@@ -104,20 +117,20 @@ const Index = () => {
         });
         
         // Check if data is from a past date
-        if (data?.data_date) {
-          const dataDate = new Date(data.data_date);
+        if (data?.tempo_details?.data_date) {
+          const dataDate = new Date(data.tempo_details.data_date);
           const today = new Date();
           const daysDiff = Math.floor((today.getTime() - dataDate.getTime()) / (1000 * 60 * 60 * 24));
           
           if (daysDiff > 0) {
             toast({
               title: "Historical Data Loaded",
-              description: `Showing TEMPO satellite data from ${data.data_date} (${daysDiff} day${daysDiff > 1 ? 's' : ''} ago). This is the most recent data available for this location.`,
+              description: `Showing TEMPO satellite data from ${data.tempo_details.data_date} (${daysDiff} day${daysDiff > 1 ? 's' : ''} ago). Multiple gas measurements collected (NO2, HCHO, O3).`,
             });
           } else {
             toast({
               title: "Data Loaded",
-              description: `TEMPO satellite data loaded successfully.`,
+              description: `TEMPO satellite data loaded successfully with multiple gas measurements.`,
             });
           }
         }
@@ -378,7 +391,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                 <span className="text-2xl">🌍</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Air Quality Monitor</h1>
+                <h1 className="text-xl font-bold text-white">Breez</h1>
                 <p className="text-sm text-white/80">Real-time environmental data</p>
               </div>
               <div className="hidden md:block ml-6 pl-6 border-l border-white/30">
@@ -673,7 +686,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                   {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
                                 </div>
 
-                                <div className="flex-shrink-0 pl-60">
+                                <div className="flex-shrink-0 flex justify-center">
                                 <img 
                                   src={getAQIImage(airPollutionData.data.list[0].main.aqi)}
                                   alt={`AQI ${airPollutionData.data.list[0].main.aqi} - ${getAQIDescription(airPollutionData.data.list[0].main.aqi).split(' - ')[0]}`}
@@ -715,58 +728,134 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                             </div>
                           </div>
                         </>
-                      ) : dataSource === "tempo" && airPollutionData.gas_type ? (
+                      ) : dataSource === "tempo" && airPollutionData.data?.list?.[0] ? (
                         <>
-                          {/* NASA TEMPO Satellite Data */}
+                          {/* NASA TEMPO Satellite Data (OpenWeather-like format) */}
                           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-8 rounded-lg border border-blue-200 dark:border-blue-800">
                             <div className="flex items-center gap-2 mb-6 justify-center">
                               <Satellite className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                              <h4 className="font-semibold text-xl text-center">NASA TEMPO Satellite Data</h4>
+                              <h4 className="font-semibold text-xl text-center">Estimated AQI from Satellite Data</h4>
                             </div>
-                            <div className="space-y-4">
-                              <div className="text-center">
-                                <div className="text-sm text-muted-foreground mb-2">Gas Type</div>
-                                <div className="text-2xl font-bold text-primary">{airPollutionData.gas_type}</div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
-                                  <div className="text-xs text-muted-foreground mb-1">Column Density</div>
-                                  <div className="font-semibold">
-                                    {airPollutionData.measurements?.tropospheric_column_density_m2?.toFixed(6) || "N/A"} m²
-                                  </div>
+                            <div className="flex flex-col items-center text-center space-y-4">
+                              <div className="space-y-2">
+                                <div className="flex items-baseline justify-center gap-2">
+                                  <span className="text-5xl font-bold text-primary">
+                                    {airPollutionData.data.list[0].main.aqi}
+                                  </span>
+                                  <span className="text-lg font-medium text-muted-foreground">
+                                    AQI
+                                  </span>
                                 </div>
-                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
-                                  <div className="text-xs text-muted-foreground mb-1">Estimated Volume</div>
-                                  <div className="font-semibold">
-                                    {airPollutionData.measurements?.estimated_volume_m3?.toFixed(2) || "N/A"} m³
-                                  </div>
+                                <div className="text-base text-muted-foreground leading-relaxed max-w-md">
+                                  {getAQIDescription(airPollutionData.data.list[0].main.aqi)}
                                 </div>
-                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
-                                  <div className="text-xs text-muted-foreground mb-1">Elevation</div>
-                                  <div className="font-semibold">
-                                    {airPollutionData.location?.elevation_m?.toFixed(0) || "N/A"} m
-                                  </div>
-                                </div>
-                                <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg">
-                                  <div className="text-xs text-muted-foreground mb-1">Data Date</div>
-                                  <div className="font-semibold text-sm">
-                                    {airPollutionData.data_date || "N/A"}
-                                    {airPollutionData.data_date && (() => {
-                                      const dataDate = new Date(airPollutionData.data_date);
-                                      const today = new Date();
-                                      const daysDiff = Math.floor((today.getTime() - dataDate.getTime()) / (1000 * 60 * 60 * 24));
-                                      return daysDiff > 0 ? (
-                                        <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                                          ({daysDiff} day{daysDiff > 1 ? 's' : ''} ago)
-                                        </div>
-                                      ) : null;
-                                    })()}
-                                  </div>
+                                <div className="flex-shrink-0 pl-60">
+                                  <img 
+                                    src={getAQIImage(airPollutionData.data.list[0].main.aqi)}
+                                    alt={`AQI ${airPollutionData.data.list[0].main.aqi}`}
+                                    className="w-16 h-16 object-contain"
+                                  />
                                 </div>
                               </div>
-                              <div className="text-xs text-center text-muted-foreground">
-                                Source: {airPollutionData.metadata?.source || "NASA TEMPO Level 3"}
+                            </div>
+                          </div>
+
+                          {/* Pollutant Concentrations (Estimated from Satellite) */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">Pollutant Concentrations (μg/m³)</h4>
+                              <span className="text-xs text-blue-600 dark:text-blue-400">(Satellite-derived estimates)</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              {airPollutionData.data.list[0].components.no2 > 0 && (
+                                <div className="bg-muted p-3 rounded">
+                                  <div className="text-sm text-muted-foreground">NO₂ (Nitrogen Dioxide)</div>
+                                  <div className="font-semibold">{airPollutionData.data.list[0].components.no2.toFixed(2)} μg/m³</div>
+                                  <div className="text-xs text-blue-600 dark:text-blue-400">From TEMPO</div>
+                                </div>
+                              )}
+                              {airPollutionData.data.list[0].components.o3 > 0 && (
+                                <div className="bg-muted p-3 rounded">
+                                  <div className="text-sm text-muted-foreground">O₃ (Ozone)</div>
+                                  <div className="font-semibold">{airPollutionData.data.list[0].components.o3.toFixed(2)} μg/m³</div>
+                                  <div className="text-xs text-blue-600 dark:text-blue-400">From TEMPO</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Raw Satellite Measurements */}
+                          {airPollutionData.tempo_details?.measurements && (
+                            <details className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <summary className="cursor-pointer font-semibold flex items-center gap-2">
+                                <Satellite className="h-4 w-4" />
+                                Raw Satellite Measurements (Tropospheric Column Density)
+                              </summary>
+                              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {airPollutionData.tempo_details.measurements.NO2 && (
+                                  <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
+                                    <div className="text-sm font-semibold mb-2">NO₂ (Nitrogen Dioxide)</div>
+                                    <div className="text-xs space-y-1">
+                                      <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.NO2.scientific_notation}</div>
+                                      <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.NO2.unit}</div>
+                                    </div>
+                                  </div>
+                                )}
+                                {airPollutionData.tempo_details.measurements.HCHO && (
+                                  <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
+                                    <div className="text-sm font-semibold mb-2">HCHO (Formaldehyde)</div>
+                                    <div className="text-xs space-y-1">
+                                      <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.HCHO.scientific_notation}</div>
+                                      <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.HCHO.unit}</div>
+                                    </div>
+                                  </div>
+                                )}
+                                {airPollutionData.tempo_details.measurements.O3PROF && (
+                                  <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
+                                    <div className="text-sm font-semibold mb-2">O₃ Profile (Ground-level)</div>
+                                    <div className="text-xs space-y-1">
+                                      <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.O3PROF.scientific_notation}</div>
+                                      <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.O3PROF.unit}</div>
+                                    </div>
+                                  </div>
+                                )}
+                                {airPollutionData.tempo_details.measurements.O3TOT && (
+                                  <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
+                                    <div className="text-sm font-semibold mb-2">O₃ Total Column</div>
+                                    <div className="text-xs space-y-1">
+                                      <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.O3TOT.scientific_notation}</div>
+                                      <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.O3TOT.unit}</div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
+                            </details>
+                          )}
+
+                          {/* TEMPO Metadata */}
+                          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Satellite:</span>
+                                <span className="font-medium">NASA TEMPO</span>
+                              </div>
+                              {airPollutionData.tempo_details?.data_date && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Data Date:</span>
+                                  <span className="font-medium">{airPollutionData.tempo_details.data_date}</span>
+                                </div>
+                              )}
+                              {airPollutionData.tempo_details?.elevation_m && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Elevation:</span>
+                                  <span className="font-medium">{airPollutionData.tempo_details.elevation_m.toFixed(0)} m</span>
+                                </div>
+                              )}
+                              {airPollutionData.tempo_details?.note && (
+                                <div className="text-xs text-muted-foreground mt-3 border-t pt-2">
+                                  <p>{airPollutionData.tempo_details.note}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </>
@@ -800,17 +889,44 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                 <div className="bg-card rounded-lg shadow-lg p-6 border">
                   <h3 className="text-xl font-semibold mb-4">Risk Group Health Info</h3>
                   {airPollutionData ? (
-                    <HealthInfoTab
-                      airQualityIndex={airPollutionData.data.list[0].main.aqi}
-                      gasConcentration={airPollutionData.data.list[0].components.no2}
-                      location={locationAddress || `Coordinates: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
-                      pollutants={{
-                        pm2_5: airPollutionData.data.list[0].components.pm2_5,
-                        pm10: airPollutionData.data.list[0].components.pm10,
-                        no2: airPollutionData.data.list[0].components.no2,
-                        o3: airPollutionData.data.list[0].components.o3
-                      }}
-                    />
+                    airPollutionData.data?.list?.[0] ? (
+                      <>
+                        <HealthInfoTab
+                          airQualityIndex={airPollutionData.data.list[0].main.aqi}
+                          gasConcentration={airPollutionData.data.list[0].components.no2}
+                          location={locationAddress || `Coordinates: ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
+                          pollutants={{
+                            pm2_5: airPollutionData.data.list[0].components.pm2_5,
+                            pm10: airPollutionData.data.list[0].components.pm10,
+                            no2: airPollutionData.data.list[0].components.no2,
+                            o3: airPollutionData.data.list[0].components.o3
+                          }}
+                        />
+                        {dataSource === "tempo" && (
+                          <div className="mt-4 bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Satellite className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <p className="text-blue-800 dark:text-blue-200 font-medium">
+                                Based on NASA TEMPO satellite measurements
+                              </p>
+                            </div>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                              AQI and pollutant concentrations are estimated from tropospheric column density measurements. 
+                              Actual ground-level concentrations may vary.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center h-80">
+                        <div className="text-center space-y-4">
+                          <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                            <MapPin className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <p className="text-muted-foreground">Data format not recognized</p>
+                        </div>
+                      </div>
+                    )
                   ) : (
                     <div className="flex items-center justify-center h-80">
                       <div className="text-center space-y-4">

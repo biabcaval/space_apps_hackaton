@@ -17,7 +17,7 @@ def get_lat_lon(path, state_sigla):
     return df[df['stateSigla'] == state_sigla]['latitude'].values[0], df[df['stateSigla'] == state_sigla]['longitude'].values[0]
 
 
-def get_poi_results(gas, date_start, date_end, state_sigla, version="V3"):
+def get_poi_results(gas, date_start, date_end, state_sigla, version="V03"):
     "gas pode ser NO3, HCHO, 03PROF, O3TOT"
 
     POI_lat = get_lat_lon(state_sigla)[0]
@@ -92,7 +92,7 @@ def find_gas_at_location(lat_target, lon_target, lat_data, lon_data, gas_data, m
     return gas_quantity
 
 
-POI_results = get_poi_results("NO2", "V3", date_start, date_end, state_sigla)
+POI_results = get_poi_results("NO2", "V03", date_start, date_end, state_sigla)
 
 granule_name = POI_results[8].data_links()[0].split("/")[-1]
 
@@ -127,7 +127,6 @@ def find_available_data(gas, start_date, end_date, state_sigla, max_days=30):
     Returns:
     tuple: (data_encontrada, POI_results) ou (None, None) se não encontrar
     """
-    
     # Converter string para datetime
     current_date = datetime.strptime(start_date, "%Y-%m-%d")
     
@@ -135,12 +134,13 @@ def find_available_data(gas, start_date, end_date, state_sigla, max_days=30):
         # Formatar data atual
         date_str = current_date.strftime("%Y-%m-%d")
         date_start = f"{date_str} 00:00:00"
+
         date_end = f"{date_str} 23:59:59"
         
         print(f"Procurando dados para: {date_str}")
         
         # Buscar dados
-        POI_results = get_poi_results(gas, date_start, date_end, state_sigla, version="V3")
+        POI_results = get_poi_results(gas, date_start, date_end, state_sigla, version="V03")
         
         print(f"  Resultados encontrados: {len(POI_results)}")
         

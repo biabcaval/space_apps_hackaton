@@ -13,8 +13,8 @@ import os
 
 from app.config import (
     OPENWEATHER_API_KEYS,
-    NASA_EARTHDATA_USERNAME,
-    NASA_EARTHDATA_PASSWORD,
+    EARTHDATA_USERNAME,
+    EARTHDATA_PASSWORD,
     TEMPO_DATA_DIR,
     get_mongodb_database
 )
@@ -387,7 +387,7 @@ def _init_earthaccess():
     if _earthaccess_auth is None:
         try:
             import earthaccess
-            if NASA_EARTHDATA_USERNAME and NASA_EARTHDATA_PASSWORD:
+            if EARTHDATA_USERNAME and EARTHDATA_PASSWORD:
                 _earthaccess_auth = earthaccess.login(
                     strategy="environment",
                     persist=True
@@ -482,30 +482,104 @@ def find_gas_at_location(
     Returns:
     gas_quantity in m^2 (converted from cm^2)
     """
-    # Apply mask to data
-    lat_masked = lat_data[mask]
-    lon_masked = lon_data[mask]
-    gas_masked = gas_data[mask]
-    
-    if len(lat_masked) == 0:
+    try:
+        # Ensure arrays are properly shaped
+        print(f"🔍 Array shapes - lat: {lat_data.shape}, lon: {lon_data.shape}, gas: {gas_data.shape}, mask: {mask.shape}")
+        
+        # Handle different array dimensions properly
+        # TEMPO data typically has lat/lon as 2D grids and gas/mask as 2D or 3D
+        
+        # If gas_data is 3D, take the first time slice
+        if len(gas_data.shape) == 3:
+            gas_data = gas_data[0, :, :]  # Take first time slice
+            print(f"🔄 Reduced gas data to 2D: {gas_data.shape}")
+        
+        # If mask is 3D, take the first time slice
+        if len(mask.shape) == 3:
+            mask = mask[0, :, :]  # Take first time slice
+            print(f"🔄 Reduced mask to 2D: {mask.shape}")
+        
+        # Ensure all arrays have the same 2D shape
+        if lat_data.shape != gas_data.shape:
+            # If lat/lon are 1D, create 2D meshgrid
+            if len(lat_data.shape) == 1 and len(lon_data.shape) == 1:
+                lon_2d, lat_2d = np.meshgrid(lon_data, lat_data)
+                lat_data = lat_2d
+                lon_data = lon_2d
+                print(f"🔄 Created 2D meshgrid: lat {lat_data.shape}, lon {lon_data.shape}")
+        
+        # Now flatten all arrays to 1D for processing
+        lat_flat = lat_data.flatten()
+        lon_flat = lon_data.flatten()
+        gas_flat = gas_data.flatten()
+        mask_flat = mask.flatten()
+        
+        print(f"🔍 Flattened shapes - lat: {lat_flat.shape}, lon: {lon_flat.shape}, gas: {gas_flat.shape}, mask: {mask_flat.shape}")
+        
+        # Ensure all flattened arrays have the same length
+        min_length = min(len(lat_flat), len(lon_flat), len(gas_flat), len(mask_flat))
+        lat_flat = lat_flat[:min_length]
+        lon_flat = lon_flat[:min_length]
+        gas_flat = gas_flat[:min_length]
+        mask_flat = mask_flat[:min_length]
+        
+        print(f"🔄 Trimmed to common length: {min_length}")
+        
+        # Apply mask to flattened data (0 = good quality)
+        valid_indices = mask_flat == 0
+        
+        if not np.any(valid_indices):
+            # Try different quality flag values
+            valid_indices = mask_flat <= 1  # Sometimes 1 is also acceptable
+            if not np.any(valid_indices):
+                raise HTTPException(
+                    status_code=404,
+                    detail="No valid data points found for this location"
+                )
+        
+        lat_masked = lat_flat[valid_indices]
+        lon_masked = lon_flat[valid_indices]
+        gas_masked = gas_flat[valid_indices]
+        
+        # Remove fill values (typically very large negative numbers or NaN)
+        valid_gas = ~np.isnan(gas_masked) & (gas_masked > -9e36) & (gas_masked != 0)
+        
+        if not np.any(valid_gas):
+            raise HTTPException(
+                status_code=404,
+                detail="No valid gas measurements found for this location"
+            )
+        
+        lat_valid = lat_masked[valid_gas]
+        lon_valid = lon_masked[valid_gas]
+        gas_valid = gas_masked[valid_gas]
+        
+        print(f"📊 Found {len(gas_valid)} valid measurements")
+        
+        # Calculate distances (simple approximation)
+        distances = np.sqrt((lat_valid - lat_target)**2 + (lon_valid - lon_target)**2)
+        
+        # Find closest point
+        closest_idx = np.argmin(distances)
+        closest_distance = distances[closest_idx]
+        
+        print(f"📍 Found closest point at distance: {closest_distance:.6f} degrees")
+        print(f"📊 Gas value: {gas_valid[closest_idx]}")
+        
+        # Return gas quantity (already in correct units from TEMPO)
+        gas_quantity = float(gas_valid[closest_idx])
+        
+        return gas_quantity
+        
+    except Exception as e:
+        print(f"❌ Error in find_gas_at_location: {str(e)}")
         raise HTTPException(
-            status_code=404,
-            detail="No valid data points found for this location"
+            status_code=500,
+            detail=f"Error processing gas location data: {str(e)}"
         )
-    
-    # Calculate distances (simple approximation)
-    distances = np.sqrt((lat_masked - lat_target)**2 + (lon_masked - lon_target)**2)
-    
-    # Find closest point
-    closest_idx = np.argmin(distances)
-    
-    # Return gas quantity in m^2 (convert from cm^2)
-    gas_quantity = gas_masked[closest_idx] / 10000.0  # cm^2 to m^2
-    
-    return float(gas_quantity)
 
 
-def get_poi_results(gas: str, date_start: str, date_end: str, POI_lat: float, POI_lon: float, version: str = "V3"):
+def get_poi_results(gas: str, date_start: str, date_end: str, POI_lat: float, POI_lon: float, version: str = "V03"):
     """
     Search for TEMPO data products
     
@@ -574,7 +648,7 @@ def find_available_data(
         
         # Search for data
         try:
-            POI_results = get_poi_results(gas, date_start_time, date_end_time, POI_lat, POI_lon, version="V3")
+            POI_results = get_poi_results(gas, date_start_time, date_end_time, POI_lat, POI_lon, version="V03")
             
             # If found data, return
             if len(POI_results) > 0:
@@ -592,6 +666,213 @@ def find_available_data(
     return None, None
 
 
+def estimate_aqi_from_gas_concentrations(no2: float = None, o3: float = None) -> Tuple[int, Dict[str, float]]:
+    """
+    Estimate AQI and pollutant concentrations from TEMPO gas measurements
+    
+    Parameters:
+    no2: NO2 tropospheric column density (molecules/m²)
+    o3: O3 tropospheric column density (molecules/m²)
+    
+    Returns:
+    Tuple of (aqi, pollutants_dict)
+    """
+    pollutants = {}
+    aqi_values = []
+    
+    # Convert NO2 from molecules/m² to μg/m³ (rough estimation)
+    # NO2: 1e15 molecules/m² ≈ 40-80 μg/m³ (depends on atmospheric conditions)
+    if no2 is not None:
+        no2_ugm3 = (no2 / 1e15) * 60  # Scaling factor based on typical atmospheric conditions
+        pollutants['no2'] = round(no2_ugm3, 2)
+        
+        # Estimate NO2 sub-index (EPA breakpoints)
+        if no2_ugm3 <= 53:
+            no2_aqi = 1  # Good
+        elif no2_ugm3 <= 100:
+            no2_aqi = 2  # Fair
+        elif no2_ugm3 <= 360:
+            no2_aqi = 3  # Moderate
+        elif no2_ugm3 <= 649:
+            no2_aqi = 4  # Poor
+        else:
+            no2_aqi = 5  # Very Poor
+        aqi_values.append(no2_aqi)
+    
+    # Convert O3 from molecules/m² to μg/m³ (rough estimation)
+    # O3: 1e15 molecules/m² ≈ 50-100 μg/m³
+    if o3 is not None:
+        o3_ugm3 = (o3 / 1e15) * 75  # Scaling factor
+        pollutants['o3'] = round(o3_ugm3, 2)
+        
+        # Estimate O3 sub-index (EPA breakpoints for 8-hour average)
+        if o3_ugm3 <= 54:
+            o3_aqi = 1  # Good
+        elif o3_ugm3 <= 70:
+            o3_aqi = 2  # Fair
+        elif o3_ugm3 <= 85:
+            o3_aqi = 3  # Moderate
+        elif o3_ugm3 <= 105:
+            o3_aqi = 4  # Poor
+        else:
+            o3_aqi = 5  # Very Poor
+        aqi_values.append(o3_aqi)
+    
+    # Overall AQI is the maximum of sub-indices
+    aqi = max(aqi_values) if aqi_values else 3  # Default to moderate if no data
+    
+    # Add placeholder values for other pollutants
+    pollutants.setdefault('pm2_5', 0)
+    pollutants.setdefault('pm10', 0)
+    pollutants.setdefault('co', 0)
+    pollutants.setdefault('so2', 0)
+    pollutants.setdefault('nh3', 0)
+    
+    return aqi, pollutants
+
+
+async def fetch_tempo_multi_gas(
+    POI_lat: float,
+    POI_lon: float,
+    start_date: str,
+    end_date: str
+) -> Dict[str, Any]:
+    """
+    Fetch multiple gas measurements from TEMPO and format as OpenWeather-compatible data
+    
+    Parameters:
+    POI_lat: Point of interest latitude
+    POI_lon: Point of interest longitude
+    start_date: Start date in format "YYYY-MM-DD"
+    end_date: End date in format "YYYY-MM-DD"
+    
+    Returns:
+    Dictionary formatted like OpenWeather API response with AQI and pollutants
+    """
+    try:
+        import earthaccess
+        import netCDF4 as nc
+        from datetime import datetime, timezone
+        
+        # Ensure data directory exists
+        os.makedirs(TEMPO_DATA_DIR, exist_ok=True)
+        
+        gas_measurements = {}
+        found_date = None
+        
+        # Try to fetch all available gases
+        for gas in ["NO2", "HCHO", "O3PROF", "O3TOT"]:
+            try:
+                # Find available data
+                date, POI_results = find_available_data(
+                    gas, start_date, end_date, POI_lat, POI_lon, max_days=30
+                )
+                
+                if date and POI_results:
+                    if found_date is None:
+                        found_date = date
+                    
+                    print(f"📊 Processing TEMPO {gas} data for: {date}")
+                    
+                    # Download the most recent granule
+                    _init_earthaccess()
+                    files = earthaccess.download(POI_results[-1], local_path=TEMPO_DATA_DIR)
+                    
+                    if files and len(files) > 0:
+                        # Read the downloaded file
+                        file_path = files[0]
+                        lat, lon, strat_gas_column, fv_strat_gas, trop_gas_column, fv_trop_gas, gas_unit, QF = read_tempo_gas_l3(file_path)
+                        
+                        # Create quality mask
+                        quality_mask = (QF == 0)
+                        
+                        # Find gas quantity at location
+                        gas_quantity = find_gas_at_location(
+                            POI_lat, POI_lon,
+                            lat, lon,
+                            trop_gas_column,
+                            quality_mask
+                        )
+                        
+                        gas_measurements[gas] = {
+                            "value": gas_quantity,
+                            "unit": gas_unit,
+                            "scientific_notation": f"{gas_quantity:.2e}"
+                        }
+                        
+                        print(f"✅ {gas}: {gas_quantity:.2e}")
+                        
+            except Exception as e:
+                print(f"⚠️  Could not fetch {gas}: {str(e)}")
+                continue
+        
+        if not gas_measurements:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No TEMPO data found for the specified date range and location. "
+                       f"TEMPO satellite data is only available for US locations and has a 2-3 day processing delay."
+            )
+        
+        # Get elevation for the location
+        elevation = get_elevation(POI_lat, POI_lon)
+        
+        # Estimate AQI from gas concentrations
+        no2_value = gas_measurements.get("NO2", {}).get("value")
+        o3_value = gas_measurements.get("O3TOT", {}).get("value")
+        aqi, pollutants = estimate_aqi_from_gas_concentrations(no2_value, o3_value)
+        
+        # Get current timestamp
+        dt = datetime.now(timezone.utc)
+        
+        # Format response like OpenWeather API
+        response = {
+            "success": True,
+            "source": "NASA TEMPO Satellite",
+            "coordinates": {"lat": POI_lat, "lon": POI_lon},
+            "data": {
+                "list": [
+                    {
+                        "dt": int(dt.timestamp()),
+                        "main": {
+                            "aqi": aqi
+                        },
+                        "components": pollutants
+                    }
+                ]
+            },
+            "tempo_details": {
+                "data_date": found_date,
+                "elevation_m": elevation,
+                "measurements": gas_measurements,
+                "note": "AQI estimated from satellite gas measurements. Pollutant concentrations are rough conversions from tropospheric column density.",
+                "metadata": {
+                    "satellite": "TEMPO (Tropospheric Emissions: Monitoring of Pollution)",
+                    "coverage_area": "Continental United States",
+                    "temporal_resolution": "Hourly during daylight",
+                    "spatial_resolution": "~2.1 km x 4.4 km"
+                }
+            }
+        }
+        
+        print(f"✅ TEMPO multi-gas fetch complete - Estimated AQI: {aqi}")
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except ImportError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Required library not installed: {str(e)}. Install with: pip install earthaccess netCDF4"
+        )
+    except Exception as e:
+        print(f"❌ Error fetching TEMPO multi-gas data: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing TEMPO data: {str(e)}"
+        )
+
+
 async def fetch_tempo_gas_volume(
     gas: str,
     POI_lat: float,
@@ -600,7 +881,7 @@ async def fetch_tempo_gas_volume(
     end_date: str
 ) -> Dict[str, Any]:
     """
-    Fetch TEMPO gas volume data for a specific location
+    Fetch TEMPO gas volume data for a specific location (single gas)
     
     Parameters:
     gas: Gas type (NO2, HCHO, O3PROF, O3TOT)
@@ -666,24 +947,68 @@ async def fetch_tempo_gas_volume(
         # Calculate gas volume (quantity * elevation)
         gas_volume = gas_quantity * elevation
         
+        # Format the response with better descriptions
+        gas_descriptions = {
+            "NO2": "Nitrogen Dioxide - primarily from vehicle exhaust and industrial emissions",
+            "HCHO": "Formaldehyde - from industrial processes and vehicle emissions", 
+            "O3PROF": "Ozone Profile - ground-level ozone concentration",
+            "O3TOT": "Total Ozone - total atmospheric ozone column"
+        }
+        
+        # Determine concentration level
+        concentration_level = "Unknown"
+        health_impact = "Data available for analysis"
+        
+        if gas == "NO2":
+            if gas_quantity < 1e15:
+                concentration_level = "Low"
+                health_impact = "Minimal health impact expected"
+            elif gas_quantity < 5e15:
+                concentration_level = "Moderate" 
+                health_impact = "Sensitive individuals may experience minor effects"
+            else:
+                concentration_level = "High"
+                health_impact = "Increased risk of respiratory irritation"
+        
         return {
             "success": True,
             "gas_type": gas,
+            "gas_description": gas_descriptions.get(gas, f"{gas} - atmospheric gas measurement"),
             "location": {
                 "latitude": POI_lat,
                 "longitude": POI_lon,
-                "elevation_m": elevation
+                "elevation_m": elevation,
+                "coordinates_formatted": f"{POI_lat:.4f}°N, {abs(POI_lon):.4f}°W"
             },
             "data_date": found_date,
             "measurements": {
-                "tropospheric_column_density_m2": gas_quantity,
-                "estimated_volume_m3": gas_volume,
-                "unit": gas_unit
+                "tropospheric_column_density": {
+                    "value": gas_quantity,
+                    "unit": "molecules/m²",
+                    "scientific_notation": f"{gas_quantity:.2e}",
+                    "concentration_level": concentration_level
+                },
+                "estimated_volume": {
+                    "value": gas_volume,
+                    "unit": "molecules",
+                    "scientific_notation": f"{gas_volume:.2e}"
+                },
+                "original_unit": gas_unit
+            },
+            "analysis": {
+                "concentration_level": concentration_level,
+                "health_impact": health_impact,
+                "data_quality": "Good" if quality_mask.sum() > 100 else "Limited"
             },
             "metadata": {
-                "source": "NASA TEMPO Level 3",
+                "source": "NASA TEMPO Level 3 Satellite Data",
+                "satellite": "TEMPO (Tropospheric Emissions: Monitoring of Pollution)",
                 "granule_count": len(POI_results),
-                "quality_points_used": int(quality_mask.sum())
+                "quality_points_used": int(quality_mask.sum()),
+                "processing_date": found_date,
+                "coverage_area": "Continental United States",
+                "temporal_resolution": "Hourly during daylight",
+                "spatial_resolution": "~2.1 km x 4.4 km"
             }
         }
         

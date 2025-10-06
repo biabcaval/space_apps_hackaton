@@ -1,4 +1,4 @@
-# Air Quality Monitor API - Backend
+# BreezAPI - Backend
 
 FastAPI backend for fetching air quality, weather, and NASA TEMPO satellite data.
 
@@ -33,8 +33,8 @@ OPENWEATHER_API_KEY_3=optional_third_key
 
 # NASA Earthdata Credentials (required for TEMPO endpoint)
 # Register at: https://urs.earthdata.nasa.gov/
-NASA_EARTHDATA_USERNAME=your_nasa_username
-NASA_EARTHDATA_PASSWORD=your_nasa_password
+EARTHDATA_USERNAME=your_nasa_username
+EARTHDATA_PASSWORD=your_nasa_password
 
 # Data directory for TEMPO downloads (optional)
 TEMPO_DATA_DIR=data/

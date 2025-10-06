@@ -6,6 +6,7 @@ from app.services import (
     search_location, 
     fetch_weather_forecast,
     fetch_tempo_gas_volume,
+    fetch_tempo_multi_gas,
     fetch_daymet_data,
     fetch_daymet_climate_summary,
     generate_health_advice,
@@ -17,7 +18,7 @@ router = APIRouter()
 @router.get("/")
 async def read_root():
     return {
-        "message": "Air Quality Monitor API",
+        "message": "BreezAPI",
         "status": "running",
         "version": "1.0.0",
         "endpoints": {
@@ -97,7 +98,7 @@ async def get_tempo_gas_data(
     end_date: str = Query(..., description="End date (YYYY-MM-DD)", regex=r"^\d{4}-\d{2}-\d{2}$")
 ):
     """
-    Get NASA TEMPO satellite gas measurement data for a specific location
+    Get NASA TEMPO satellite gas measurement data for a specific location (single gas)
     
     Supported gases:
     - NO2: Nitrogen Dioxide
@@ -108,6 +109,28 @@ async def get_tempo_gas_data(
     Returns tropospheric column density and estimated gas volume based on elevation
     """
     return await fetch_tempo_gas_volume(gas, lat, lon, start_date, end_date)
+
+
+@router.get("/air-pollution/tempo-current")
+async def get_tempo_current_data(
+    lat: float = Query(..., description="Latitude coordinate"),
+    lon: float = Query(..., description="Longitude coordinate"),
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)", regex=r"^\d{4}-\d{2}-\d{2}$"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)", regex=r"^\d{4}-\d{2}-\d{2}$")
+):
+    """
+    Get NASA TEMPO satellite multi-gas measurements formatted like OpenWeather API
+    
+    Fetches NO2 and O3 data and estimates AQI with pollutant concentrations.
+    Response format matches OpenWeather API structure for easy integration.
+    
+    Returns:
+    - Estimated AQI (1-5 scale)
+    - Pollutant concentrations (μg/m³)
+    - Raw TEMPO satellite measurements
+    - Metadata about the satellite data
+    """
+    return await fetch_tempo_multi_gas(lat, lon, start_date, end_date)
 
 
 @router.get("/weather/daymet")

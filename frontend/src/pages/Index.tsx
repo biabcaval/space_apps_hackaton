@@ -173,13 +173,9 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
   const fetchWeatherForecast = async (lat: number, lon: number) => {
     setIsLoadingWeather(true);
     try {
-      const response = await fetch(`http://localhost:8000/weather/forecast?lat=${lat}&lon=${lon}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const response = await api.get(`/weather/forecast`, { params: { lat: lat, lon: lon } });
+
+      const data = response;
       console.log('Weather API response:', data);
       
       // Validate the data structure

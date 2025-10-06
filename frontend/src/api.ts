@@ -56,8 +56,8 @@ class Api {
       
       let response;
       if (method === 'get') {
-        // Para GET, use query params
-        const queryParams = this.buildQueryString(data);
+        // Para GET, extrair os parâmetros do objeto params
+        const queryParams = data?.params ? this.buildQueryString(data.params) : this.buildQueryString(data);
         const fullUrl = `${endpoint}${queryParams}`;
         response = await api.get<T>(fullUrl, config);
       } else {
@@ -88,11 +88,12 @@ class Api {
     if (!params || Object.keys(params).length === 0) return '';
     
     const queryParams = Object.entries(params)
-      .map(([key, value]) => `${key}=${value}`)
+      .filter(([_, value]) => value !== undefined) // Remove parâmetros undefined
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&');
     
     return `?${queryParams}`;
-  }
+}
 
   async get<T>(endpoint: string, params = {}): Promise<T> {
     console.log('Starting GET request:', {

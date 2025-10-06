@@ -52,18 +52,21 @@ class Api {
   ): Promise<T> {
     try {
       const startTime = Date.now();
-      // Build query string for both GET and POST (some POST endpoints use query params)
-      const queryParams = this.buildQueryString(data);
-      const fullUrl = `${endpoint}${queryParams}`;
-      
       const config = customTimeout ? { timeout: customTimeout } : {};
       
-      const response = method === 'get' 
-        ? await api.get<T>(fullUrl, config)
-        : await api.post<T>(fullUrl, {}, config); // POST with query params, empty body
+      let response;
+      if (method === 'get') {
+        // Para GET, extrair os parâmetros do objeto params
+        const queryParams = data?.params ? this.buildQueryString(data.params) : this.buildQueryString(data);
+        const fullUrl = `${endpoint}${queryParams}`;
+        response = await api.get<T>(fullUrl, config);
+      } else {
+        // Para POST, use body data
+        response = await api.post<T>(endpoint, data, config);
+      }
       
       const duration = Date.now() - startTime;
-      console.log(`Request to ${api.defaults.baseURL}${fullUrl} succeeded in ${duration}ms`);
+      console.log(`Request to ${api.defaults.baseURL}${endpoint} succeeded in ${duration}ms`);
       
       return response.data;
     } catch (error) {
@@ -85,11 +88,12 @@ class Api {
     if (!params || Object.keys(params).length === 0) return '';
     
     const queryParams = Object.entries(params)
-      .map(([key, value]) => `${key}=${value}`)
+      .filter(([_, value]) => value !== undefined) // Remove parâmetros undefined
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&');
     
     return `?${queryParams}`;
-  }
+}
 
   async get<T>(endpoint: string, params = {}): Promise<T> {
     console.log('Starting GET request:', {

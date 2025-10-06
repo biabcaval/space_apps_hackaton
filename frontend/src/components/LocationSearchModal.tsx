@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { api } from "../api";
 
 interface LocationSearchModalProps {
   open: boolean;
@@ -50,19 +51,18 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect, usOnly = fa
 
     setIsLoading(true);
     try {
-      let url = `http://localhost:8000/geocoding/search?q=${encodeURIComponent(query)}&limit=10`;
-      if (usOnly) {
-        url += "&country=US"; // Add country filter for US only
-      }
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      let results = data.results || [];
-      
+      //let url = `http://localhost:8000/geocoding/search?q=${encodeURIComponent(query)}&limit=10`;
+      //if (usOnly) {
+      //  url += "&country=US"; // Add country filter for US only
+      //}
+      const response = await api.get(`/geocoding/search`, { 
+        q: query.trim(), // Alterado de 'query' para 'q'
+        limit: 10, 
+        country: usOnly ? 'US' : undefined 
+      });
+
+      let results = response.results || [];
+    
       // Filter for US locations only if usOnly is true
       if (usOnly) {
         results = results.filter((location: LocationResult) => 

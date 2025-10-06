@@ -7,6 +7,7 @@ import { Bell, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import UserLocationMap from "./UserLocationMap";
 import heroBg from "../assets/hero-bg.jpg";
+import { api } from "../api";
 
 interface NotificationModalProps {
   open: boolean;
@@ -77,7 +78,7 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -97,14 +98,27 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
         description: "Please get your current location to receive notifications.",
         variant: "destructive",
       });
-      return;
     }
-
+    
     // Store preferences (in a real app, this would be sent to your API)
     const locationData = { latitude, longitude, method: 'geolocation' };
     const location = `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
     
     console.log("Notification preferences:", { name, phone, ...locationData });
+    
+    // post to api /data/store?collection=users
+    await api.post("/data/store?collection=users", {
+      name: name,
+      phone: phone,
+      location: {
+        latitude: latitude,
+        longitude: longitude
+      },
+      active: true,
+      notificationPreferences: {
+        frequency: 'realtime'
+      }
+    });
     
     toast({
       title: "Preferences Saved!",

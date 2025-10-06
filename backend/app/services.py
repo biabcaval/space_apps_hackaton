@@ -9,6 +9,10 @@ import requests_cache
 from retry_requests import retry
 import pandas as pd
 import numpy as np
+from pydantic import BaseModel
+from fastapi import APIRouter, Query, Body, Depends
+from pydantic import BaseModel
+from typing import Optional
 import os
 
 from app.config import (
@@ -18,6 +22,15 @@ from app.config import (
     TEMPO_DATA_DIR,
     get_mongodb_database
 )
+
+class HealthAdviceParams(BaseModel):
+    aqi: int
+    risk_group: str
+    pm2_5: Optional[float] = None
+    pm10: Optional[float] = None
+    no2: Optional[float] = None
+    o3: Optional[float] = None
+
 
 async def fetch_pollution_data(lat: float, lon: float, endpoint: str):
     """
@@ -1722,6 +1735,33 @@ THE TEST: If I removed the group name from your advice, a reader should STILL be
             "source": f"Fallback (Error: {str(e)[:50]})"
         }
 
+async def get_health_params(
+    # Query parameters
+    aqi: Optional[int] = Query(None, description="Air Quality Index (1-5)", ge=1, le=5),
+    risk_group: Optional[str] = Query(None, description="Risk group name"),
+    pm2_5: Optional[float] = Query(None, description="PM2.5 concentration (μg/m³)"),
+    pm10: Optional[float] = Query(None, description="PM10 concentration (μg/m³)"),
+    no2: Optional[float] = Query(None, description="NO2 concentration (μg/m³)"),
+    o3: Optional[float] = Query(None, description="O3 concentration (μg/m³)"),
+    # Body parameter
+    body: Optional[HealthAdviceParams] = Body(None)
+) -> HealthAdviceParams:
+    if body:
+        return body
+    elif aqi is not None and risk_group is not None:
+        return HealthAdviceParams(
+            aqi=aqi,
+            risk_group=risk_group,
+            pm2_5=pm2_5,
+            pm10=pm10,
+            no2=no2,
+            o3=o3
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Parameters must be provided either in query or in request body"
+        )
 
 def get_fallback_advice(aqi: int, risk_group: str) -> str:
     """

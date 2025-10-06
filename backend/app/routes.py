@@ -11,6 +11,11 @@ from app.services import (
     generate_health_advice,
     save_json_to_mongodb
 )
+from fastapi import APIRouter, Query, Body, Depends
+from pydantic import BaseModel
+from typing import Optional
+from .services import get_health_params, HealthAdviceParams
+from fastapi import HTTPException
 
 router = APIRouter()
 
@@ -159,22 +164,25 @@ async def get_daymet_climate_summary(
     """
     return await fetch_daymet_climate_summary(lat, lon, start_year, end_year)
 
-
 @router.post("/health/advice")
 async def get_health_advice(
-    aqi: int = Query(..., description="Air Quality Index (1-5)", ge=1, le=5),
-    risk_group: str = Query(..., description="Risk group name"),
-    pm2_5: Optional[float] = Query(None, description="PM2.5 concentration (μg/m³)"),
-    pm10: Optional[float] = Query(None, description="PM10 concentration (μg/m³)"),
-    no2: Optional[float] = Query(None, description="NO2 concentration (μg/m³)"),
-    o3: Optional[float] = Query(None, description="O3 concentration (μg/m³)")
+    params: HealthAdviceParams = Depends(get_health_params)
 ):
     """
     Generate personalized health advice using LLM for a specific risk group
     
-    This endpoint uses OpenAI's GPT model to generate tailored health recommendations
-    based on the current air quality index and pollutant levels. If the API is unavailable,
-    it returns fallback advice based on predefined rules.
+    This endpoint accepts parameters either as query parameters or in the request body.
+    
+    Query parameters example:
+    POST /health/advice?aqi=3&risk_group=Elderly&pm2_5=20
+    
+    Body example:
+    POST /health/advice
+    {
+        "aqi": 3,
+        "risk_group": "Elderly",
+        "pm2_5": 20
+    }
     
     Risk groups include:
     - General Population
@@ -185,19 +193,21 @@ async def get_health_advice(
     - Pregnant Women
     - Outdoor Workers
     """
-    # Build pollutants dictionary
     pollutants = {}
-    if pm2_5 is not None:
-        pollutants['pm2_5'] = pm2_5
-    if pm10 is not None:
-        pollutants['pm10'] = pm10
-    if no2 is not None:
-        pollutants['no2'] = no2
-    if o3 is not None:
-        pollutants['o3'] = o3
+    if params.pm2_5 is not None:
+        pollutants['pm2_5'] = params.pm2_5
+    if params.pm10 is not None:
+        pollutants['pm10'] = params.pm10
+    if params.no2 is not None:
+        pollutants['no2'] = params.no2
+    if params.o3 is not None:
+        pollutants['o3'] = params.o3
     
-    return await generate_health_advice(aqi, risk_group, pollutants if pollutants else None)
-
+    return await generate_health_advice(
+        params.aqi, 
+        params.risk_group, 
+        pollutants if pollutants else None
+    )
 
 @router.post("/data/store")
 async def store_json_data(

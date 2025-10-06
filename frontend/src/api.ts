@@ -144,6 +144,31 @@ class Api {
     }
   }
 
+  async postLongRunning<T>(endpoint: string, data = {}): Promise<T> {
+    console.log('Starting LONG-RUNNING POST request:', {
+      endpoint,
+      data,
+      timeout: `${this.LONG_TIMEOUT}ms`,
+      primaryUrl: this.primaryApi.defaults.baseURL,
+      fallbackUrl: this.fallbackApi.defaults.baseURL
+    });
+
+    try {
+      // Tenta primeiro a API do ngrok com timeout longo
+      return await this.tryRequest<T>(this.primaryApi, 'post', endpoint, data, this.LONG_TIMEOUT);
+    } catch (primaryError) {
+      console.warn('Primary API failed, trying fallback with long timeout...');
+
+      try {
+        // Se falhar, tenta a API local com timeout longo
+        return await this.tryRequest<T>(this.fallbackApi, 'post', endpoint, data, this.LONG_TIMEOUT);
+      } catch (fallbackError) {
+        console.error('Both APIs failed');
+        throw new Error('Todas as tentativas de API falharam');
+      }
+    }
+  }
+
   // Method for heavy operations that need longer timeout (TEMPO, Daymet)
   async getLongRunning<T>(endpoint: string, params = {}): Promise<T> {
     console.log('Starting LONG-RUNNING GET request:', {

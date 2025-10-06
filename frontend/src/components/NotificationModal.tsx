@@ -107,17 +107,18 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
     console.log("Notification preferences:", { name, phone, ...locationData });
     
     // post to api /data/store?collection=users
-    await api.post("/data/store?collection=users", {
-      name: name,
-      phone: phone,
-      location: {
-        latitude: latitude,
-        longitude: longitude
-      },
-      active: true,
-      notificationPreferences: {
-        frequency: 'realtime'
-      }
+    await api.postLongRunning(
+        "/data/store?collection=users", {
+        name: name,
+        phone: phone,
+        location: {
+            latitude: latitude,
+            longitude: longitude
+        },
+        active: true,
+        notificationPreferences: {
+            frequency: 'realtime'
+        }
     });
     
     toast({

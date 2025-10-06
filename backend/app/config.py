@@ -62,7 +62,8 @@ ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:8000",
-    "https://biabcaval.github.io"
+    "https://biabcaval.github.io",
+    "https://magnificent-endurance-production.up.railway.app"
 ]
 
 def get_mongodb_client():

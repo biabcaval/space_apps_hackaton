@@ -33,9 +33,13 @@ class SchedulerService {
       const now = moment();
       const users = await User.find({ active: true });
 
+      console.log(`Verificando notificações agendadas para ${users.length} usuários às ${now.format('HH:mm:ss')}`);
       for (const user of users) {
         const shouldSendNotification = this.shouldSendNotification(user, now);
+        console.log(`Usuário ${user.phoneNumber} - Deve enviar notificação: ${shouldSendNotification}`);
+        console.log(user)
         if (shouldSendNotification) {
+          console.log(`Enviando notificação para ${user.phoneNumber}...`);
           await this.processUserNotification(user);
           
           // atualiza usuário para ativo: false
@@ -62,8 +66,8 @@ class SchedulerService {
   }
 
   shouldSendNotification(user, currentTime) {
-    if (!user.notificationPreferences || !user.notificationPreferences.timeOfDay || !user.notificationPreferences.frequency || !user.active) {
-      return false;
+    if (user.active) {
+      return true;
     }
 
     const { frequency, timeOfDay } = user.notificationPreferences;
@@ -121,52 +125,68 @@ class SchedulerService {
   }
 
   async fetchHealthAdvice(airData) {
-    const PRIMARY_API_URL = process.env.PRIMARY_API_URL || 'http://localhost:8000';
-    const FALLBACK_API_URL = process.env.FALLBACK_API_URL || 'http://localhost:8000';
+    const API_URL_PRIMARY = process.env.API_URL_PRIMARY;
+    const API_URL_FALLBACK = process.env.API_URL_FALLBACK;
     const TIMEOUT = 5000;
 
     const fetchWithTimeout = async (baseUrl) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
-      try {
-        const response = await fetch(`${baseUrl}/health/advice`, {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            aqi: airData.aqi,
-            risk_group: "General Population",
-            pm2_5: airData.pollutants.pm25,
-            pm10: airData.pollutants.pm10,
-            no2: airData.pollutants.no2,
-            o3: airData.pollutants.o3
-          })
-        });
+    try {
+      console.log(`Tentando conectar em: ${baseUrl}`);
+      console.log('Headers:', {
+        'Content-Type': 'application/json'
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      console.log
+      
+      const response = await fetch(`${baseUrl}/health/advice`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          aqi: airData.aqi,
+          risk_group: "General Population",
+          pm2_5: airData.pollutants.pm25,
+          pm10: airData.pollutants.pm10,
+          no2: airData.pollutants.no2,
+          o3: airData.pollutants.o3
+        })
+      });
 
-        const data = await response.json();
-        return data.advice || 'No specific health advice available.';
-      } finally {
-        clearTimeout(timeoutId);
+      console.log('Status da resposta:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+
+      const data = await response.json();
+      return data.advice || 'No specific health advice available.';
+    } catch (error) {
+      console.error(`Erro detalhado para ${baseUrl}:`, {
+        message: error.message,
+        code: error.code,
+        cause: error.cause
+      });
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
     try {
       // Tenta primeiro a API primária
       console.log('Trying primary API for health advice...');
-      return await fetchWithTimeout(PRIMARY_API_URL);
+      return await fetchWithTimeout(API_URL_PRIMARY);
     } catch (primaryError) {
       console.warn('Primary API failed for health advice, trying fallback...', primaryError);
       
       try {
         // Tenta a API de fallback
-        return await fetchWithTimeout(FALLBACK_API_URL);
+        return await fetchWithTimeout(API_URL_FALLBACK);
       } catch (fallbackError) {
         console.error('Both APIs failed for health advice:', fallbackError);
         return 'Unable to fetch health advice at this time.';
@@ -175,8 +195,8 @@ class SchedulerService {
   }
 
   async fetchAirQualityData(location) {
-    const PRIMARY_API_URL = process.env.PRIMARY_API_URL || 'http://localhost:8000';
-    const FALLBACK_API_URL = process.env.FALLBACK_API_URL || 'http://localhost:8000';
+    const API_URL_PRIMARY = process.env.API_URL_PRIMARY;
+    const API_URL_FALLBACK = process.env.API_URL_FALLBACK;
     const TIMEOUT = 5000;
 
     const fetchWithTimeout = async (baseUrl) => {
@@ -208,7 +228,8 @@ class SchedulerService {
     try {
       // Tenta primeiro a API primária
       console.log('Trying primary API...');
-      const data = await fetchWithTimeout(PRIMARY_API_URL);
+      const data = await fetchWithTimeout(API_URL_PRIMARY);
+      console.log('Data received from primary API:', data);
       return {
         aqi: data.data.list[0].main.aqi,
         status: this.getAqiStatus(data.data.list[0].main.aqi),
@@ -224,7 +245,7 @@ class SchedulerService {
       
       try {
         // Tenta a API de fallback
-        const data = await fetchWithTimeout(FALLBACK_API_URL);
+        const data = await fetchWithTimeout(API_URL_FALLBACK);
         return {
           aqi: data.data.list[0].main.aqi,
           status: this.getAqiStatus(data.data.list[0].main.aqi),

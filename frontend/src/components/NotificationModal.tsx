@@ -110,15 +110,35 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
     await api.postLongRunning(
         "/data/store?collection=users", {
         name: name,
-        phone: phone,
+        phoneNumber: phone,
         location: {
             latitude: latitude,
             longitude: longitude
         },
         active: true,
         notificationPreferences: {
-            frequency: 'realtime'
+            frequency: 'daily',
+            timeOfDay: '08:00',
+            timezone: 'America/Recife'
         }
+    }).then((response) => {
+        if (response.status !== 200) {
+            toast({
+                title: "Error",
+                description: "There was an error saving your preferences. Please try again.",
+                variant: "destructive",
+            });
+            return;
+        }
+        console.log("User saved:", response.data);
+    }).catch((error) => {
+        console.error("Error saving user:", error);
+        toast({
+            title: "Error",
+            description: "There was an error saving your preferences. Please try again.",
+            variant: "destructive",
+        });
+        return;
     });
     
     toast({

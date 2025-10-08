@@ -138,6 +138,7 @@ class UserService {
         { active: isActive },
         { new: true, runValidators: true }
       );
+      console.log(user);
 
       if (!user) {
         throw new Error('Usuário não encontrado');

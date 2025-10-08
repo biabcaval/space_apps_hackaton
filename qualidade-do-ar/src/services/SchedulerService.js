@@ -10,7 +10,7 @@ dotenv.config();
 class SchedulerService {
   constructor() {
     this.activeJobs = new Map();
-    this.TIMEOUT_BETWEEN_USERS = 60000; // 60 segundos entre mensagens para diferentes usuários
+    this.TIMEOUT_BETWEEN_USERS = 10000; // 60 segundos entre mensagens para diferentes usuários
   }
 
   async initialize() {
@@ -95,7 +95,6 @@ class SchedulerService {
 
   async processUserNotification(user) {
     try {
-      // Aqui você implementará a chamada para sua API de qualidade do ar
       const airData = await this.fetchAirQualityData(user.location);
       //const message = this.formatNotificationMessage(airData);
 
@@ -138,8 +137,6 @@ class SchedulerService {
       console.log('Headers:', {
         'Content-Type': 'application/json'
       });
-
-      console.log
       
       const response = await fetch(`${baseUrl}/health/advice`, {
         method: 'POST',

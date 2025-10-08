@@ -10,7 +10,7 @@ class WhatsappService {
     this.isReady = false;
     this.messageQueue = [];
     this.isProcessing = false;
-    this.rateLimitDelay = process.env.WHATSAPP_RATE_LIMIT_DELAY || 3000;
+    this.rateLimitDelay = process.env.WHATSAPP_RATE_LIMIT_DELAY || 8000;
   }
 
   async initialize() {
@@ -76,13 +76,29 @@ class WhatsappService {
         }
 
         console.log(`Mensagem recebida de ${name} (${sender}): ${msg.body}`);
+        const userMsg = msg.body;
+        // user message starts with "Hello, here is my location:"
+        const messageContainsLocation = userMsg.toLowerCase().includes('hello, here is my location:');
+        let locationData = null;
+        if (messageContainsLocation) {
+          // extract latitude and longitude from message
+          let latitude_longitude = userMsg.split('location:')[1].trim();
+          const [latitude, longitude] = latitude_longitude.split(',').map(coord => parseFloat(coord.trim()));
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            locationData = { latitude: latitude, longitude: longitude };
+            console.log(`Localização extraída da mensagem: Latitude ${latitude}, Longitude ${longitude}`);
+          }
+        }
 
         // Se for uma localização
-        if (msg.type === 'location') {
+        if (msg.type === 'location' || (messageContainsLocation && locationData)) {
+          console.log('Processando mensagem de localização...');
+          locationData = locationData || { latitude: msg.location.latitude, longitude: msg.location.longitude };
+          console.log(`Localização recebida de ${name} (${sender}): Latitude ${locationData.latitude}, Longitude ${locationData.longitude}`);
           // update user location
           await UserService.updateUserLocation(user._id, {
-            latitude: msg.location.latitude,
-            longitude: msg.location.longitude
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
           });
 
           // update user date time to receive updates do in the next minute
@@ -95,7 +111,7 @@ class WhatsappService {
 
           await UserService.setUserActive(user._id, true);
 
-          const response = `Just received your location! Latitude: ${msg.location.latitude}, Longitude: ${msg.location.longitude}. You will receive air quality updates shortly.`;
+          const response = `Just received your location! Latitude: ${locationData.latitude}, Longitude: ${locationData.longitude}. You will receive air quality updates shortly.`;
           await this.enqueueMessage(sender, response);
         }
 

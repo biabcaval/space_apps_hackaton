@@ -1,1 +1,2 @@
+release: chmod +x setup_netrc.sh && ./setup_netrc.sh
 web: uvicorn main:app --host 0.0.0.0 --port $PORT

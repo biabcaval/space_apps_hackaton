@@ -31,13 +31,24 @@ class SchedulerService {
   async checkScheduledNotifications() {
     try {
       const now = moment();
-      const users = await User.find({ active: true });
+      let users = await User.find();
+      users = users.filter(user => user.notificationPreferences && user.location);
+      users = users.filter(user => user.phoneNumber);
+      // filter users with valid phoneNumber or have phoneNumber field
+      users = users.filter(user => user.phoneNumber && user.phoneNumber.trim() !== '');
+      // remove users duplicated by phoneNumber
+      const uniqueUsersMap = new Map();
+      users.forEach(user => {
+        if (!uniqueUsersMap.has(user.phoneNumber)) {
+          uniqueUsersMap.set(user.phoneNumber, user);
+        }
+      });
+      users = Array.from(uniqueUsersMap.values());
 
-      console.log(`Verificando notificações agendadas para ${users.length} usuários às ${now.format('HH:mm:ss')}`);
+      console.log(`Verificando notificações agendadas para ${users.length} usuários às ${now.format('HH:mm')}`);
       for (const user of users) {
         const shouldSendNotification = this.shouldSendNotification(user, now);
         console.log(`Usuário ${user.phoneNumber} - Deve enviar notificação: ${shouldSendNotification}`);
-        console.log(user)
         if (shouldSendNotification) {
           console.log(`Enviando notificação para ${user.phoneNumber}...`);
           await this.processUserNotification(user);
@@ -48,11 +59,7 @@ class SchedulerService {
             {
               $set: {
                 active: false,
-                notificationPreferences: {
-                  frequency: 'daily',
-                  timeOfDay: '08:00',
-                  timezone: 'America/Recife'
-                }
+                last_notifiedAt: new Date()
               }
             }
           );
@@ -66,7 +73,7 @@ class SchedulerService {
   }
 
   shouldSendNotification(user, currentTime) {
-    if (user.active) {
+    if (user.active === true) {
       return true;
     }
 
@@ -109,9 +116,14 @@ class SchedulerService {
         status: 'pending'
       });
 
+      let userPhoneNumber = user.phoneNumber;
+      // treat phone number to follow format
+      // (81) 9 9999-9999 -> 81999999999
+      let normalizedPhoneNumber = this.normalizePhoneNumber(userPhoneNumber);
+
       // Envia via WhatsApp
-      await WhatsappService.enqueueMessage(user.phoneNumber, message);
-      
+      await WhatsappService.enqueueMessage(normalizedPhoneNumber, message);
+
       // Atualiza status
       notification.status = 'sent';
       notification.sentAt = new Date();
@@ -277,6 +289,14 @@ Main pollutants:
     if (aqi === 4) return 'Unhealthy';
     if (aqi === 5) return 'Very Unhealthy';
     return 'Hazardous';
+  }
+
+  normalizePhoneNumber(phoneNumber) {
+    if (!phoneNumber) {
+      throw new Error('Número de telefone não fornecido');
+    }
+    let normalized = phoneNumber.replace(/\D/g, '');
+    return normalized;
   }
 }
 

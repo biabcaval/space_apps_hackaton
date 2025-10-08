@@ -68,7 +68,11 @@ class WhatsappService {
             phoneNumber: sender,
             name: name,
             active: true,
-            notificationPreferences: {}
+            notificationPreferences: {
+              frequency: 'daily',
+              timeOfDay: '08:00',
+              timezone: 'America/Recife'
+            }
           });
           console.log(`Novo usuário criado: ${name} (${sender})`);
         } else {
@@ -102,13 +106,12 @@ class WhatsappService {
           });
 
           // update user date time to receive updates do in the next minute
-          await UserService.updateUserNotificationPreferences(user._id, {
-            frequency: 'realtime',
-            // right now + 1 minute
-            timeOfDay: moment().add(1, 'minute').format('HH:mm'),
-            timezone: 'America/Recife'
-          });
-
+          //await UserService.updateUserNotificationPreferences(user._id, {
+          //  frequency: 'realtime',
+          //  // right now + 1 minute
+          //  timeOfDay: moment().add(1, 'minute').format('HH:mm'),
+          //  timezone: 'America/Recife'
+          //});
           await UserService.setUserActive(user._id, true);
 
           const response = `Just received your location! Latitude: ${locationData.latitude}, Longitude: ${locationData.longitude}. You will receive air quality updates shortly.`;

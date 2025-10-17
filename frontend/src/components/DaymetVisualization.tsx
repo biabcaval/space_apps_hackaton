@@ -403,7 +403,7 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
         {Object.entries(stats).map(([key, value]) => (
           <Card key={key} className="border shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex items-center gap-2 sm:text-base text-sm">
                 {getIcon(key)}
                 {formatKey(key)}
               </CardTitle>
@@ -465,7 +465,7 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
       </CardHeader>
       <CardContent>
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 border-b pb-2">
+        <div className="flex sm:flex-row flex-col gap-2 mb-6 border-b pb-2">
           <Button
             variant={activeTab === "temperature" ? "default" : "outline"}
             size="sm"

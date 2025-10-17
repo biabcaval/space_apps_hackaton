@@ -42,10 +42,10 @@ class ErrorBoundary extends Component<Props, State> {
           <CardContent>
             <div className="text-center text-muted-foreground">
               <p>Something went wrong while loading this component.</p>
-              <p className="text-sm mt-2">Please refresh the page or try again later.</p>
+              <p className="sm:text-sm text-xs mt-2">Please refresh the page or try again later.</p>
               {this.state.error && (
                 <details className="mt-4 text-left">
-                  <summary className="cursor-pointer text-sm">Error Details</summary>
+                  <summary className="cursor-pointer sm:text-sm text-xs">Error Details</summary>
                   <pre className="text-xs mt-2 p-2 bg-muted rounded overflow-auto">
                     {this.state.error.message}
                   </pre>

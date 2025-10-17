@@ -192,7 +192,7 @@ const AirQualityMap = () => {
               placeholder="Enter your Mapbox public token"
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
-              className="font-mono text-sm"
+              className="font-mono sm:text-sm text-xs"
             />
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : "Load Map"}
@@ -207,7 +207,7 @@ const AirQualityMap = () => {
         <CardHeader>
           <CardTitle>Air Quality Index</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-y-2 sm:text-sm text-xs">
           {[
             { color: "hsl(145, 65%, 50%)", label: "0-50: Good" },
             { color: "hsl(45, 95%, 55%)", label: "51-100: Moderate" },

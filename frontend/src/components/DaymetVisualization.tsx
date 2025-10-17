@@ -59,7 +59,7 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
         <CardContent>
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Fetching climate data...</p>
+            <p className="sm:text-sm text-xs text-muted-foreground">Fetching climate data...</p>
           </div>
         </CardContent>
       </Card>
@@ -242,11 +242,11 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
         <div className="flex items-center justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-1 bg-red-500 rounded"></div>
-            <span className="text-sm font-medium">Max Temperature</span>
+            <span className="sm:text-sm text-xs font-medium">Max Temperature</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-1 bg-blue-500 rounded"></div>
-            <span className="text-sm font-medium">Min Temperature</span>
+            <span className="sm:text-sm text-xs font-medium">Min Temperature</span>
           </div>
         </div>
       </div>
@@ -373,7 +373,7 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
         </svg>
 
         {displayData.length < precipData.length && (
-          <p className="text-center text-sm text-muted-foreground mt-2">
+          <p className="text-center sm:text-sm text-xs text-muted-foreground mt-2">
             Showing first {displayData.length} of {precipData.length} days
           </p>
         )}
@@ -410,19 +410,19 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Mean:</span>
+                <span className="sm:text-sm text-xs text-muted-foreground">Mean:</span>
                 <span className="font-semibold">{value.mean.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Min:</span>
+                <span className="sm:text-sm text-xs text-muted-foreground">Min:</span>
                 <span className="font-semibold text-blue-600">{value.min.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Max:</span>
+                <span className="sm:text-sm text-xs text-muted-foreground">Max:</span>
                 <span className="font-semibold text-red-600">{value.max.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-sm text-muted-foreground">Data Points:</span>
+                <span className="sm:text-sm text-xs text-muted-foreground">Data Points:</span>
                 <span className="font-semibold text-primary">{value.count}</span>
               </div>
             </CardContent>
@@ -456,7 +456,7 @@ const DaymetVisualization = ({ data, isLoading }: DaymetVisualizationProps) => {
             </CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-sm font-medium text-primary">{data.source}</div>
+            <div className="sm:text-sm text-xs font-medium text-primary">{data.source}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {data.data_count} days of data
             </div>

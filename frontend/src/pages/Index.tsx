@@ -388,23 +388,23 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-2xl">🌍</span>
+                <span className="sm:text-2xl text-sm">🌍</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Breez</h1>
-                <p className="text-sm text-white/80">Real-time environmental data</p>
+                <h1 className="sm:text-xl text-sm font-bold text-white">Breez</h1>
+                <p className="sm:text-sm text-xs text-white/80">Real-time environmental data</p>
               </div>
               <div className="hidden md:block ml-6 pl-6 border-l border-white/30">
-                <p className="text-sm font-medium text-white/90 italic">
+                <p className="sm:text-sm text-xs font-medium text-white/90 italic">
                   "Don't let pollution take your breath away"
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex sm:flex-row flex-col items-center gap-2">
               {/* Data Source Toggle */}
               <Select value={dataSource} onValueChange={(value: DataSource) => handleDataSourceChange(value)}>
-                <SelectTrigger className="w-[180px] text-sm text-white bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors">
+                <SelectTrigger className="w-[180px] sm:text-sm text-xs text-white bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors">
                   <SelectValue>
                     <div className="flex items-center gap-2">
                       {dataSource === "openweather" ? (
@@ -440,7 +440,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
               {/* Notifications Button */}
               <button
                 onClick={() => setShowNotificationModal(true)}
-                className="text-sm text-white hover:text-white/80 transition-colors font-medium bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2"
+                className="sm:text-sm text-xs text-white hover:text-white/80 transition-colors font-medium bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2"
               >
                 <Bell className="h-4 w-4" />
                 Notification Settings
@@ -468,7 +468,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex sm:flex-row flex-col gap-2">
                   <Button
                     onClick={() => setShowLocationSearchModal(true)}
                     variant="outline"
@@ -506,7 +506,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Map Section */}
                   <div className="bg-card rounded-lg shadow-lg p-6 border">
-                    <h3 className="text-xl font-semibold mb-4">Map View</h3>
+                    <h3 className="sm:text-xl text-sm mb-4">Map View</h3>
                     <UserLocationMap 
                       latitude={latitude} 
                       longitude={longitude}
@@ -516,10 +516,10 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
 
                   {/* Air Quality Section */}
                   <div className="bg-card rounded-lg shadow-lg p-6 border">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold">Air Quality Data</h3>
+                  <div className="flex sm:flex-row flex-col sm:items-center items-start justify-between mb-4">
+                    <h3 className="sm:text-xl text-sm">Air Quality Data</h3>
                     {latitude && longitude && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-row gap-2">
                         <Button
                           variant={showForecast ? "outline" : "default"}
                           size="sm"
@@ -601,7 +601,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                         day: 'numeric' 
                                       })}
                                     </div>
-                                    <div className="text-sm text-muted-foreground mb-1">
+                                    <div className="sm:text-sm text-xs text-muted-foreground mb-1">
                                       {getAQIDescription(day.aqi).split(' - ')[0]} • {day.data_points} data points
                                     </div>
                                     <div className="text-xs text-muted-foreground">
@@ -611,7 +611,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                 </div>
                                 <div className="text-right flex-shrink-0">
                                   <div className="flex items-baseline gap-1 mb-1">
-                                    <span className="text-xl font-bold text-primary">{day.aqi}</span>
+                                    <span className="sm:text-xl text-sm text-primary">{day.aqi}</span>
                                     <span className="text-xs font-medium text-muted-foreground">AQI</span>
                                   </div>
                                   <div className="text-xs text-muted-foreground">
@@ -671,7 +671,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                         <>
                           {/* Air Quality Index - OpenWeather */}
                           <div className="bg-muted p-8 rounded-lg border">
-                            <h4 className="font-semibold mb-6 text-xl text-center">Air Quality Index (AQI)</h4>
+                            <h4 className="font-semibold mb-6 sm:text-xl text-sm">Air Quality Index (AQI)</h4>
                             <div className="flex flex-col items-center text-center space-y-4">
                               <div className="space-y-2">
                                 <div className="flex items-baseline justify-center gap-2">
@@ -702,27 +702,27 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                             <h4 className="font-semibold">Pollutant Concentrations (μg/m³)</h4>
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">CO</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">CO</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.co}</div>
                               </div>
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">NO₂</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">NO₂</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.no2}</div>
                               </div>
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">O₃</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">O₃</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.o3}</div>
                               </div>
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">PM2.5</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">PM2.5</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.pm2_5}</div>
                               </div>
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">PM10</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">PM10</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.pm10}</div>
                               </div>
                               <div className="bg-muted p-3 rounded">
-                                <div className="text-sm text-muted-foreground">SO₂</div>
+                                <div className="sm:text-sm text-xs text-muted-foreground">SO₂</div>
                                 <div className="font-semibold">{airPollutionData.data.list[0].components.so2}</div>
                               </div>
                             </div>
@@ -734,7 +734,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-8 rounded-lg border border-blue-200 dark:border-blue-800">
                             <div className="flex items-center gap-2 mb-6 justify-center">
                               <Satellite className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                              <h4 className="font-semibold text-xl text-center">Estimated AQI from Satellite Data</h4>
+                              <h4 className="font-semibold sm:text-xl text-sm">Estimated AQI from Satellite Data</h4>
                             </div>
                             <div className="flex flex-col items-center text-center space-y-4">
                               <div className="space-y-2">
@@ -769,14 +769,14 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                             <div className="grid grid-cols-2 gap-3">
                               {airPollutionData.data.list[0].components.no2 > 0 && (
                                 <div className="bg-muted p-3 rounded">
-                                  <div className="text-sm text-muted-foreground">NO₂ (Nitrogen Dioxide)</div>
+                                  <div className="sm:text-sm text-xs text-muted-foreground">NO₂ (Nitrogen Dioxide)</div>
                                   <div className="font-semibold">{airPollutionData.data.list[0].components.no2.toFixed(2)} μg/m³</div>
                                   <div className="text-xs text-blue-600 dark:text-blue-400">From TEMPO</div>
                                 </div>
                               )}
                               {airPollutionData.data.list[0].components.o3 > 0 && (
                                 <div className="bg-muted p-3 rounded">
-                                  <div className="text-sm text-muted-foreground">O₃ (Ozone)</div>
+                                  <div className="sm:text-sm text-xs text-muted-foreground">O₃ (Ozone)</div>
                                   <div className="font-semibold">{airPollutionData.data.list[0].components.o3.toFixed(2)} μg/m³</div>
                                   <div className="text-xs text-blue-600 dark:text-blue-400">From TEMPO</div>
                                 </div>
@@ -794,7 +794,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {airPollutionData.tempo_details.measurements.NO2 && (
                                   <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
-                                    <div className="text-sm font-semibold mb-2">NO₂ (Nitrogen Dioxide)</div>
+                                    <div className="sm:text-sm text-xs font-semibold mb-2">NO₂ (Nitrogen Dioxide)</div>
                                     <div className="text-xs space-y-1">
                                       <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.NO2.scientific_notation}</div>
                                       <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.NO2.unit}</div>
@@ -803,7 +803,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                 )}
                                 {airPollutionData.tempo_details.measurements.HCHO && (
                                   <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
-                                    <div className="text-sm font-semibold mb-2">HCHO (Formaldehyde)</div>
+                                    <div className="sm:text-sm text-xs font-semibold mb-2">HCHO (Formaldehyde)</div>
                                     <div className="text-xs space-y-1">
                                       <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.HCHO.scientific_notation}</div>
                                       <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.HCHO.unit}</div>
@@ -812,7 +812,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                 )}
                                 {airPollutionData.tempo_details.measurements.O3PROF && (
                                   <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
-                                    <div className="text-sm font-semibold mb-2">O₃ Profile (Ground-level)</div>
+                                    <div className="sm:text-sm text-xs font-semibold mb-2">O₃ Profile (Ground-level)</div>
                                     <div className="text-xs space-y-1">
                                       <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.O3PROF.scientific_notation}</div>
                                       <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.O3PROF.unit}</div>
@@ -821,7 +821,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                                 )}
                                 {airPollutionData.tempo_details.measurements.O3TOT && (
                                   <div className="bg-white/50 dark:bg-black/20 p-3 rounded">
-                                    <div className="text-sm font-semibold mb-2">O₃ Total Column</div>
+                                    <div className="sm:text-sm text-xs font-semibold mb-2">O₃ Total Column</div>
                                     <div className="text-xs space-y-1">
                                       <div><span className="text-muted-foreground">Value:</span> {airPollutionData.tempo_details.measurements.O3TOT.scientific_notation}</div>
                                       <div><span className="text-muted-foreground">Unit:</span> {airPollutionData.tempo_details.measurements.O3TOT.unit}</div>
@@ -834,7 +834,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
 
                           {/* TEMPO Metadata */}
                           <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <div className="text-sm space-y-2">
+                            <div className="sm:text-sm text-xs space-y-2">
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Satellite:</span>
                                 <span className="font-medium">NASA TEMPO</span>
@@ -863,7 +863,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                         <div className="bg-yellow-50 dark:bg-yellow-950/30 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800">
                           <div className="text-center space-y-2">
                             <p className="font-semibold text-yellow-800 dark:text-yellow-200">Unexpected Data Format</p>
-                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                            <p className="sm:text-sm text-xs text-yellow-700 dark:text-yellow-300">
                               The API returned data in an unexpected format. Please check the raw response below.
                             </p>
                           </div>
@@ -887,7 +887,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
 
                 {/* Risk Group Health Info Section */}
                 <div className="bg-card rounded-lg shadow-lg p-6 border">
-                  <h3 className="text-xl font-semibold mb-4">Risk Group Health Info</h3>
+                  <h3 className="sm:text-xl text-sm mb-4">Risk Group Health Info</h3>
                   {airPollutionData ? (
                     airPollutionData.data?.list?.[0] ? (
                       <>
@@ -904,7 +904,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                         />
                         {dataSource === "tempo" && (
                           <div className="mt-4 bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2 sm:text-sm text-xs">
                               <Satellite className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               <p className="text-blue-800 dark:text-blue-200 font-medium">
                                 Based on NASA TEMPO satellite measurements
@@ -954,7 +954,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
                     <MapPin className="h-12 w-12 text-muted-foreground" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">No Location Set</h3>
+                    <h3 className="sm:text-xl text-sm mb-2">No Location Set</h3>
                     <p className="text-muted-foreground max-w-md mx-auto">
                       Click "Get My Location" above to see your position on the map and get personalized air quality information for your area.
                     </p>

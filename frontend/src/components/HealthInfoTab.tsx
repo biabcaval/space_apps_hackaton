@@ -392,11 +392,11 @@ const HealthInfoTab = ({
                 <h3 className="font-semibold text-primary">
                   {airQuality.status}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="sm:text-sm text-xs text-muted-foreground">
                   Air Quality Index: {airQualityIndex}
                 </p>
                 {gasConcentration > 0 && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="sm:text-sm text-xs text-muted-foreground">
                     Gas Concentration: {gasConcentration.toFixed(2)} ppm
                   </p>
                 )}
@@ -434,7 +434,7 @@ const HealthInfoTab = ({
                     </div>
                     <div>
                       <h4 className="font-medium">{group.name}</h4>
-                      <p className="text-sm text-muted-foreground">{group.description}</p>
+                      <p className="sm:text-sm text-xs text-muted-foreground">{group.description}</p>
                     </div>
                   </div>
                   <Badge variant={getAirQualityColor(currentLevel)}>
@@ -448,7 +448,7 @@ const HealthInfoTab = ({
                     <AlertDescription>
                       <div className="space-y-2">
                         <h5 className="font-medium">{group.name} - {airQuality.status} Air Quality</h5>
-                        <p className="text-sm leading-relaxed">
+                        <p className="sm:text-sm text-xs leading-relaxed">
                           {getCurrentRecommendation(group.csvKey)}
                         </p>
                       </div>
@@ -473,7 +473,7 @@ const HealthInfoTab = ({
           {loadingAdvice ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Generating personalized advice...</p>
+              <p className="sm:text-sm text-xs text-muted-foreground">Generating personalized advice...</p>
             </div>
           ) : currentAdvice ? (
             <div className="space-y-4">
@@ -493,11 +493,11 @@ const HealthInfoTab = ({
               {/* LLM-Generated Advice */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Health Recommendations</CardTitle>
+                  <CardTitle className="sm:text-lg text-base">Health Recommendations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none">
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                    <div className="whitespace-pre-wrap sm:text-sm text-xs leading-relaxed">
                       {currentAdvice.advice}
                     </div>
                   </div>
@@ -521,7 +521,7 @@ const HealthInfoTab = ({
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     <div className="space-y-2">
-                      <h5 className="font-medium text-sm">Additional Guidelines</h5>
+                      <h5 className="font-medium sm:text-sm text-xs">Additional Guidelines</h5>
                       <p className="text-xs leading-relaxed">
                         {getCurrentRecommendation(
                           riskGroupConfigs.find(g => g.name === selectedGroup)?.csvKey || ''

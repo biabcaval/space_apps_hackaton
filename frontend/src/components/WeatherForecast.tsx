@@ -169,13 +169,13 @@ const WeatherForecast = ({ weatherData, isLoading }: WeatherForecastProps) => {
           <Cloud className="h-5 w-5" />
           Weather Forecast
         </CardTitle>
-        <div className="text-sm text-muted-foreground">
+        <div className="sm:text-sm text-xs text-muted-foreground">
           Elevation: {weatherData.elevation || 'N/A'}m • Source: {weatherData.source || 'Unknown'}
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex sm:flex-row flex-col gap-2">
             <Button 
               variant={activeTab === "hourly" ? "default" : "outline"}
               onClick={() => setActiveTab("hourly")}
@@ -202,13 +202,13 @@ const WeatherForecast = ({ weatherData, isLoading }: WeatherForecastProps) => {
                     {getWeatherIcon(hour.temperature, hour.precipitation)}
                     <div>
                       <div className="font-medium">{formatTime(hour.datetime)}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="sm:text-sm text-xs text-muted-foreground">
                         {hour.datetime ? new Date(hour.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-4 sm:text-sm text-xs">
                     <div className="flex items-center gap-1">
                       <Thermometer className="h-4 w-4 text-red-500" />
                       <span>{hour.temperature ? `${hour.temperature.toFixed(1)}°C` : 'N/A'}</span>
@@ -234,20 +234,20 @@ const WeatherForecast = ({ weatherData, isLoading }: WeatherForecastProps) => {
           )}
 
           {activeTab === "daily" && (
-            <div className="space-y-3">
+            <div className="space-y-3 overflow-x-auto">
               {dailyForecast.map((day, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/50 rounded-lg w-full gap-4">
                   <div className="flex items-center gap-3">
                     {getWeatherIcon(day.temperature_max, day.precipitation_sum)}
                     <div>
                       <div className="font-medium">{formatDate(day.date)}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="sm:text-sm text-xs text-muted-foreground">
                         {index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : ''}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-6 text-sm">
+                  <div className="grid grid-cols-2 sm:flex items-center gap-4 sm:gap-6 sm:text-sm text-xs w-full sm:w-auto">
                     <div className="text-center">
                       <div className="flex items-center gap-1 mb-1">
                         <Thermometer className="h-4 w-4 text-red-500" />

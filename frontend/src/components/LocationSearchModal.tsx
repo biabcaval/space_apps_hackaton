@@ -124,7 +124,7 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect, usOnly = fa
 
         <div className="space-y-4">
           {usOnly && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:text-sm text-xs text-blue-800 dark:text-blue-200">
               <strong>Note:</strong> NASA TEMPO satellite data is only available for United States locations.
             </div>
           )}
@@ -154,7 +154,7 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect, usOnly = fa
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="sm:text-sm text-xs font-medium truncate">
                         {suggestion.formatted}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -171,21 +171,21 @@ const LocationSearchModal = ({ open, onOpenChange, onLocationSelect, usOnly = fa
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No {usOnly ? "US " : ""}locations found for "{searchQuery}"</p>
-              <p className="text-sm">Try searching for a {usOnly ? "US " : ""}city name</p>
+              <p className="sm:text-sm text-xs">Try searching for a {usOnly ? "US " : ""}city name</p>
             </div>
           )}
 
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+              <span className="ml-2 sm:text-sm text-xs text-muted-foreground">Searching...</span>
             </div>
           )}
 
           {!searchQuery && !isLoading && (
           <div className="text-center py-8 text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Type at least 2 characters to search</p>
+            <p className="sm:text-sm text-xs">Type at least 2 characters to search</p>
             <p className="text-xs mt-1">
               Examples: {usOnly ? "New York, Los Angeles, Chicago, Houston" : "London, New York, Tokyo, Paris"}
             </p>

@@ -155,26 +155,26 @@ const NotificationModal = ({ open, onOpenChange }: NotificationModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden p-0">
+      <DialogContent className="w-[95vw] sm:w-[85vw] md:w-[500px] h-[85vh] sm:h-[90vh] overflow-y-auto ">
         <div 
-          className="relative h-32 bg-cover bg-center"
+          className="relative h-24 sm:h-32 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBg})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-blue-yonder/90 via-neon-blue/80 to-electric-blue/90" />
           <div className="relative h-full flex items-center justify-center">
-            <Bell className="h-12 w-12 text-primary-foreground" />
+            <Bell className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground" />
           </div>
         </div>
         
-        <div className="p-6">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl">Would you like to receive notifications?</DialogTitle>
-            <DialogDescription className="text-base">
+        <div className="p-4 sm:p-6">
+          <DialogHeader className="mb-4 sm:mb-6">
+            <DialogTitle className="text-xl sm:text-2xl">Would you like to receive notifications?</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
               Stay informed about air quality changes in your area with real-time alerts.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input

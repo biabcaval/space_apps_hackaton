@@ -389,7 +389,7 @@ const fetchAirPollutionForecast = async (lat: number, lon: number) => {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <span className="sm:text-3xl text-xl shadow-sm">
-                  <img src="breez-logo.png" alt="Breez Logo" className="w-full h-full shadow-inner invert brightness-0 contrast-125" />
+                  <img src="breez-logo.png" alt="Breez Logo" className="w-full h-full shadow-inner" />
                 </span>
               </div>
               <div>

@@ -48,6 +48,7 @@
     "eslint-plugin-react-refresh": "^0.4.22",
     "gh-pages": "^6.3.0",
     "globals": "^16.4.0",
+    "playwright": "^1.59.1",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",

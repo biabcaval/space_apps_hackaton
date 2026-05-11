@@ -1,4 +1,15 @@
-# Breez - Air Quality and Climate Intelligence
+<p align="center">
+  <img src="frontend/public/breez-logo.png" alt="Breez logo" width="180" />
+</p>
+
+# Breez
+
+## Air Quality and Climate Intelligence
+
+## Quick Links
+
+- Project Demo: https://biabcaval.github.io/space_apps_hackaton/
+- Project Presentation (PDF): https://www.dropbox.com/scl/fi/bia57oy3e2cbe68ysvt5c/Breez-Nasa-Space-Apps-2025.pdf?rlkey=jeovhp7gmhpb6enq3rdgbkhdk&st=xdo5drt5&dl=0
 
 Breez is a NASA Space Apps 2025 project focused on helping people understand local air quality risk using real-time and satellite-backed environmental data.
 
@@ -24,39 +35,6 @@ Breez gives users a practical, location-based environmental briefing so they can
 - Optional service: WhatsApp notification microservice (`qualidade-do-ar`)
 
 The main user flow documented below is based on `frontend + backend`.
-
-## Local Setup
-
-### 1. Backend
-
-```bash
-cd backend
-source venv/bin/activate
-python main.py
-```
-
-Expected: API running at `http://localhost:8000`.
-
-Required environment values are read from `backend/.env`, including:
-- `OPENWEATHER_API_KEY_1` (or `OPENWEATHER_API_KEYS`)
-- `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` (for TEMPO endpoints)
-
-### 2. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev -- --host 127.0.0.1 --port 5173
-```
-
-Frontend env expected in `.env` (repo root currently contains these keys):
-- `VITE_API_URL_PRIMARY`
-- `VITE_API_URL_FALLBACK`
-
-### 3. Health Data Asset
-
-The health recommendation CSV is required by the `HealthInfoTab` component and is included at:
-- `frontend/public/data/crisis_group.csv`
 
 ## Main Application Flow (Screenshots)
 
@@ -107,6 +85,39 @@ Switching data source to TEMPO surfaces satellite-derived pollutant estimates an
 ![Daymet climate visualization](docs/screenshots/08-daymet-climate-visualization.png)
 
 Climate charts add historical context (temperature and precipitation) for the selected location.
+
+## Local Setup
+
+### 1. Backend
+
+```bash
+cd backend
+source venv/bin/activate
+python main.py
+```
+
+Expected: API running at `http://localhost:8000`.
+
+Required environment values are read from `backend/.env`, including:
+- `OPENWEATHER_API_KEY_1` (or `OPENWEATHER_API_KEYS`)
+- `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` (for TEMPO endpoints)
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Frontend env expected in `.env` (repo root currently contains these keys):
+- `VITE_API_URL_PRIMARY`
+- `VITE_API_URL_FALLBACK`
+
+### 3. Health Data Asset
+
+The health recommendation CSV is required by the `HealthInfoTab` component and is included at:
+- `frontend/public/data/crisis_group.csv`
 
 ## Notes and Limitations
 

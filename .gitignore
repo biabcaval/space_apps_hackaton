@@ -6,5 +6,6 @@ backend/.env
 .cache.sqlite
 backend/.cache.sqlite
 data/
+# Re-downloadable NASA TEMPO NetCDF cache. See docs/TEMPO_DATA.md.
 backend/data/
 .cache.sqlites

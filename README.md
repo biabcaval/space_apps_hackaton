@@ -10,6 +10,7 @@
 
 - Project Demo: https://biabcaval.github.io/space_apps_hackaton/
 - Project Presentation (PDF): https://www.dropbox.com/scl/fi/bia57oy3e2cbe68ysvt5c/Breez-Nasa-Space-Apps-2025.pdf?rlkey=jeovhp7gmhpb6enq3rdgbkhdk&st=xdo5drt5&dl=0
+- TEMPO data provenance, structure, exclusion, and recovery: [docs/TEMPO_DATA.md](docs/TEMPO_DATA.md)
 
 Breez is a NASA Space Apps 2025 project focused on helping people understand local air quality risk using real-time and satellite-backed environmental data.
 
@@ -123,4 +124,5 @@ The health recommendation CSV is required by the `HealthInfoTab` component and i
 
 - TEMPO coverage is US-focused; non-US locations may not return satellite measurements.
 - TEMPO data has practical latency and may use historical fallback windows.
+- Downloaded TEMPO NetCDF files are an ignored, re-downloadable cache; see [docs/TEMPO_DATA.md](docs/TEMPO_DATA.md) before excluding or deleting them.
 - The WhatsApp service in `qualidade-do-ar` is optional and not required for the core UI flow shown above.
